@@ -1,0 +1,680 @@
+{
+  "description": "HSITP Building 8 - Wet Lab Facility Location Graph (Production Ready)",
+  "building": {
+    "name": "HSITP Building 8",
+    "fullName": "Hong Kong-Shenzhen Innovation and Technology Park - Building 8",
+    "address": "Lok Ma Chau Loop, New Territories, Hong Kong",
+    "type": "Wet Laboratory Enabled Building",
+    "floors": 8,
+    "totalGFA": 32000,
+    "specifications": {
+      "gFloorArea": "Approx. 590 m²",
+      "typicalFloorArea": "Approx. 1,900 m² (1/F-7/F, 4/F omitted)",
+      "labProvisions": "Biosafety Level 3 / PRC P3 Lab provisions enabled",
+      "floorLoading": "7.5kPa",
+      "structuralClearance": "G/F: 5.75m, 1/F-7/F: 4.62m"
+    }
+  },
+  "nodes": [
+    {
+      "id": "hsitp_main_entrance",
+      "name": "Main Entrance",
+      "floor": 0,
+      "x": 0,
+      "y": 0,
+      "type": "entrance",
+      "description": "Main building entrance from the park"
+    },
+    {
+      "id": "hsitp_reception",
+      "name": "Reception Desk",
+      "floor": 0,
+      "x": 15,
+      "y": 0,
+      "type": "reception",
+      "description": "Main reception and visitor information desk"
+    },
+    {
+      "id": "hsitp_lobby",
+      "name": "Main Lobby",
+      "floor": 0,
+      "x": 30,
+      "y": 0,
+      "type": "lobby",
+      "description": "Main lobby area"
+    },
+    {
+      "id": "hsitp_lift_lobby",
+      "name": "Lift Lobby",
+      "floor": 0,
+      "x": 45,
+      "y": 0,
+      "type": "elevator",
+      "description": "Main lift lobby with passenger, service, and fireman lifts"
+    },
+    {
+      "id": "hsitp_stairs_main",
+      "name": "Main Staircase",
+      "floor": 0,
+      "x": 50,
+      "y": 0,
+      "type": "stairs",
+      "description": "Main staircase for emergency and regular access"
+    },
+    {
+      "id": "hsitp_restroom_gf_m",
+      "name": "Men's Restroom (G/F)",
+      "floor": 0,
+      "x": 70,
+      "y": 0,
+      "type": "facility",
+      "description": "Ground floor men's lavatory"
+    },
+    {
+      "id": "hsitp_restroom_gf_f",
+      "name": "Women's Restroom (G/F)",
+      "floor": 0,
+      "x": 75,
+      "y": 0,
+      "type": "facility",
+      "description": "Ground floor women's lavatory"
+    },
+    {
+      "id": "hsitp_zone_01",
+      "name": "Zone 01",
+      "floor": 1,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02",
+      "name": "Zone 02",
+      "floor": 1,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03",
+      "name": "Zone 03",
+      "floor": 1,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05",
+      "name": "Zone 05",
+      "floor": 1,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06",
+      "name": "Zone 06",
+      "floor": 1,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use",
+      "image": "/images/zone6.jpg"
+    },
+    {
+      "id": "hsitp_zone_07",
+      "name": "Zone 07",
+      "floor": 1,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_1",
+      "name": "Central Corridor (1/F)",
+      "floor": 1,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_1",
+      "name": "Lift Lobby (1/F)",
+      "floor": 1,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on first floor"
+    },
+    {
+      "id": "hsitp_stairs_1",
+      "name": "Stairs (1/F)",
+      "floor": 1,
+      "x": 85,
+      "y": 20,
+      "type": "stairs",
+      "description": "Staircase on first floor"
+    },
+    {
+      "id": "hsitp_tel_equip_1",
+      "name": "TEL EQUIP RM (1/F)",
+      "floor": 1,
+      "x": 35,
+      "y": 20,
+      "type": "facility",
+      "description": "Telecommunications Equipment Room"
+    },
+    {
+      "id": "hsitp_ahu_1_top",
+      "name": "AHU RM (1/F - Top)",
+      "floor": 1,
+      "x": 90,
+      "y": 5,
+      "type": "facility",
+      "description": "Air Handling Unit Room - Top"
+    },
+    {
+      "id": "hsitp_ahu_1_bottom",
+      "name": "AHU RM (1/F - Bottom)",
+      "floor": 1,
+      "x": 5,
+      "y": 35,
+      "type": "facility",
+      "description": "Air Handling Unit Room - Bottom"
+    },
+    {
+      "id": "hsitp_lav_f_1",
+      "name": "Female LAV (1/F)",
+      "floor": 1,
+      "x": 90,
+      "y": 15,
+      "type": "facility",
+      "description": "Female lavatory on first floor"
+    },
+    {
+      "id": "hsitp_lav_m_1",
+      "name": "Male LAV (1/F)",
+      "floor": 1,
+      "x": 90,
+      "y": 25,
+      "type": "facility",
+      "description": "Male lavatory on first floor"
+    },
+    {
+      "id": "hsitp_meter_1",
+      "name": "METER RM (1/F)",
+      "floor": 1,
+      "x": 88,
+      "y": 20,
+      "type": "facility",
+      "description": "Meter Room on first floor"
+    },
+    {
+      "id": "hsitp_pantry_1",
+      "name": "Common Pantry (1/F)",
+      "floor": 1,
+      "x": 82,
+      "y": 30,
+      "type": "facility",
+      "description": "Common pantry with kitchen facilities"
+    },
+    {
+      "id": "hsitp_zone_01_2",
+      "name": "Zone 01",
+      "floor": 2,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02_2",
+      "name": "Zone 02",
+      "floor": 2,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03_2",
+      "name": "Zone 03",
+      "floor": 2,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05_2",
+      "name": "Zone 05",
+      "floor": 2,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06_2",
+      "name": "Zone 06",
+      "floor": 2,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_07_2",
+      "name": "Zone 07",
+      "floor": 2,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_2",
+      "name": "Central Corridor (2/F)",
+      "floor": 2,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_2",
+      "name": "Lift Lobby (2/F)",
+      "floor": 2,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on second floor"
+    },
+    {
+      "id": "hsitp_lav_f_2",
+      "name": "Female LAV (2/F)",
+      "floor": 2,
+      "x": 90,
+      "y": 15,
+      "type": "facility",
+      "description": "Female lavatory on second floor"
+    },
+    {
+      "id": "hsitp_lav_m_2",
+      "name": "Male LAV (2/F)",
+      "floor": 2,
+      "x": 90,
+      "y": 25,
+      "type": "facility",
+      "description": "Male lavatory on second floor"
+    },
+    {
+      "id": "hsitp_pantry_2",
+      "name": "Common Pantry (2/F)",
+      "floor": 2,
+      "x": 82,
+      "y": 30,
+      "type": "facility",
+      "description": "Common pantry with kitchen facilities"
+    },
+    {
+      "id": "hsitp_zone_01_3",
+      "name": "Zone 01",
+      "floor": 3,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02_3",
+      "name": "Zone 02",
+      "floor": 3,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03_3",
+      "name": "Zone 03",
+      "floor": 3,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05_3",
+      "name": "Zone 05",
+      "floor": 3,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06_3",
+      "name": "Zone 06",
+      "floor": 3,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_07_3",
+      "name": "Zone 07",
+      "floor": 3,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_3",
+      "name": "Central Corridor (3/F)",
+      "floor": 3,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_3",
+      "name": "Lift Lobby (3/F)",
+      "floor": 3,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on third floor"
+    },
+    {
+      "id": "hsitp_zone_01_5",
+      "name": "Zone 01",
+      "floor": 5,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02_5",
+      "name": "Zone 02",
+      "floor": 5,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03_5",
+      "name": "Zone 03",
+      "floor": 5,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05_5",
+      "name": "Zone 05",
+      "floor": 5,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06_5",
+      "name": "Zone 06",
+      "floor": 5,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_07_5",
+      "name": "Zone 07",
+      "floor": 5,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_5",
+      "name": "Central Corridor (5/F)",
+      "floor": 5,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_5",
+      "name": "Lift Lobby (5/F)",
+      "floor": 5,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on fifth floor"
+    },
+    {
+      "id": "hsitp_zone_01_6",
+      "name": "Zone 01",
+      "floor": 6,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02_6",
+      "name": "Zone 02",
+      "floor": 6,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03_6",
+      "name": "Zone 03",
+      "floor": 6,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05_6",
+      "name": "Zone 05",
+      "floor": 6,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06_6",
+      "name": "Zone 06",
+      "floor": 6,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_07_6",
+      "name": "Zone 07",
+      "floor": 6,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_6",
+      "name": "Central Corridor (6/F)",
+      "floor": 6,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_6",
+      "name": "Lift Lobby (6/F)",
+      "floor": 6,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on sixth floor"
+    },
+    {
+      "id": "hsitp_zone_01_7",
+      "name": "Zone 01",
+      "floor": 7,
+      "x": 20,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_02_7",
+      "name": "Zone 02",
+      "floor": 7,
+      "x": 40,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_03_7",
+      "name": "Zone 03",
+      "floor": 7,
+      "x": 60,
+      "y": 10,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_05_7",
+      "name": "Zone 05",
+      "floor": 7,
+      "x": 20,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_06_7",
+      "name": "Zone 06",
+      "floor": 7,
+      "x": 40,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_zone_07_7",
+      "name": "Zone 07",
+      "floor": 7,
+      "x": 60,
+      "y": 30,
+      "type": "zone",
+      "description": "Flexible space for wet lab or office use"
+    },
+    {
+      "id": "hsitp_corridor_7",
+      "name": "Central Corridor (7/F)",
+      "floor": 7,
+      "x": 40,
+      "y": 20,
+      "type": "corridor",
+      "description": "Main horizontal corridor connecting all zones"
+    },
+    {
+      "id": "hsitp_lift_lobby_7",
+      "name": "Lift Lobby (7/F)",
+      "floor": 7,
+      "x": 80,
+      "y": 20,
+      "type": "elevator",
+      "description": "Lift lobby on seventh floor"
+    }
+  ],
+  "edges": [
+    { "from": "hsitp_main_entrance", "to": "hsitp_reception", "weight": 15, "description": "Direct path from entrance to reception" },
+    { "from": "hsitp_reception", "to": "hsitp_lobby", "weight": 15, "description": "Path to main lobby" },
+    { "from": "hsitp_lobby", "to": "hsitp_lift_lobby", "weight": 15, "description": "Path to lift lobby" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_stairs_main", "weight": 5, "description": "Adjacent to stairs" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_restroom_gf_m", "weight": 25, "description": "Path to men's restroom" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_restroom_gf_f", "weight": 30, "description": "Path to women's restroom" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_1", "weight": 5, "floorChange": true, "description": "Lift to 1/F" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_2", "weight": 5, "floorChange": true, "description": "Lift to 2/F" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_3", "weight": 5, "floorChange": true, "description": "Lift to 3/F" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_5", "weight": 5, "floorChange": true, "description": "Lift to 5/F" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_6", "weight": 5, "floorChange": true, "description": "Lift to 6/F" },
+    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_7", "weight": 5, "floorChange": true, "description": "Lift to 7/F" },
+    { "from": "hsitp_lift_lobby_1", "to": "hsitp_corridor_1", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_01", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_02", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_03", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_05", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_06", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_zone_07", "weight": 15, "description": "Path to Zone 07" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_tel_equip_1", "weight": 5, "description": "Path to TEL EQUIP RM" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_lav_f_1", "weight": 20, "description": "Path to Female LAV" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_lav_m_1", "weight": 20, "description": "Path to Male LAV" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_meter_1", "weight": 15, "description": "Path to METER RM" },
+    { "from": "hsitp_corridor_1", "to": "hsitp_pantry_1", "weight": 15, "description": "Path to Common Pantry" },
+    { "from": "hsitp_lift_lobby_1", "to": "hsitp_stairs_1", "weight": 5, "description": "Adjacent to stairs" },
+    { "from": "hsitp_lift_lobby_2", "to": "hsitp_corridor_2", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_01_2", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_02_2", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_03_2", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_05_2", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_06_2", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_zone_07_2", "weight": 15, "description": "Path to Zone 07" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_lav_f_2", "weight": 20, "description": "Path to Female LAV" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_lav_m_2", "weight": 20, "description": "Path to Male LAV" },
+    { "from": "hsitp_corridor_2", "to": "hsitp_pantry_2", "weight": 15, "description": "Path to Common Pantry" },
+    { "from": "hsitp_lift_lobby_3", "to": "hsitp_corridor_3", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_01_3", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_02_3", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_03_3", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_05_3", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_06_3", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_3", "to": "hsitp_zone_07_3", "weight": 15, "description": "Path to Zone 07" },
+    { "from": "hsitp_lift_lobby_5", "to": "hsitp_corridor_5", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_01_5", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_02_5", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_03_5", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_05_5", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_06_5", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_5", "to": "hsitp_zone_07_5", "weight": 15, "description": "Path to Zone 07" },
+    { "from": "hsitp_lift_lobby_6", "to": "hsitp_corridor_6", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_01_6", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_02_6", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_03_6", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_05_6", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_06_6", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_6", "to": "hsitp_zone_07_6", "weight": 15, "description": "Path to Zone 07" },
+    { "from": "hsitp_lift_lobby_7", "to": "hsitp_corridor_7", "weight": 10, "description": "Path from lift lobby to corridor" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_01_7", "weight": 15, "description": "Path to Zone 01" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_02_7", "weight": 10, "description": "Path to Zone 02" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_03_7", "weight": 15, "description": "Path to Zone 03" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_05_7", "weight": 15, "description": "Path to Zone 05" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_06_7", "weight": 10, "description": "Path to Zone 06" },
+    { "from": "hsitp_corridor_7", "to": "hsitp_zone_07_7", "weight": 15, "description": "Path to Zone 07" }
+  ]
+}

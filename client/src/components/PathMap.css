@@ -1,0 +1,352 @@
+.path-map-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.path-map-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.path-map-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.path-map-title h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.path-time {
+  font-size: 16px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.path-map-content {
+  padding: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.path-map-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.path-map-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.path-map-content::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.path-map-content::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+.path-route-info {
+  margin-bottom: 20px;
+}
+
+.route-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.route-from,
+.route-to {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.route-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.route-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.route-arrow {
+  font-size: 24px;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.path-visualization {
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  min-height: 400px;
+  position: relative;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.floor-plan-container {
+  position: relative;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e0e0e0;
+  transition: box-shadow 0.3s ease;
+}
+
+.floor-plan-container:hover {
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.2);
+}
+
+.floor-plan-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+.path-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.path-line {
+  opacity: 0;
+  animation: pathFadeIn 0.8s ease-out forwards;
+}
+
+@keyframes pathFadeIn {
+  from {
+    opacity: 0;
+    stroke-width: 2;
+  }
+  to {
+    opacity: 1;
+    stroke-width: 6;
+  }
+}
+
+.path-marker {
+  animation: markerPop 0.3s ease-out;
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+@keyframes markerPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.marker-glow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+.tooltip-bg {
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.simple-path-map {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.path-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  position: relative;
+}
+
+.step-marker {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.marker-icon {
+  font-size: 20px;
+}
+
+.step-info {
+  flex: 1;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.step-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.step-direction {
+  font-size: 14px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.floor-change {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.step-connector {
+  position: absolute;
+  left: 20px;
+  top: 50px;
+  width: 2px;
+  height: 30px;
+  background: #667eea;
+}
+
+.connector-line {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, #667eea, rgba(102, 126, 234, 0.3));
+}
+
+.path-instructions {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.path-instructions h4 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.instructions-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.instructions-list li {
+  padding: 8px 0;
+  color: #555;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .path-map-content {
+    padding: 15px;
+  }
+  
+  .route-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .route-arrow {
+    transform: rotate(90deg);
+  }
+}
+

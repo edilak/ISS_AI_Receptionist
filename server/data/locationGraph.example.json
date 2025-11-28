@@ -1,0 +1,123 @@
+{
+  "description": "Example location graph structure for ISS Facility Services",
+  "nodes": [
+    {
+      "id": "entrance",
+      "name": "Main Entrance",
+      "floor": 1,
+      "x": 0,
+      "y": 0,
+      "type": "entrance",
+      "description": "Main building entrance"
+    },
+    {
+      "id": "reception",
+      "name": "Reception Desk",
+      "floor": 1,
+      "x": 10,
+      "y": 0,
+      "type": "reception",
+      "description": "Main reception area"
+    },
+    {
+      "id": "elevator1",
+      "name": "Elevator 1",
+      "floor": 1,
+      "x": 20,
+      "y": 0,
+      "type": "elevator",
+      "description": "Main elevator"
+    },
+    {
+      "id": "meeting_room_1",
+      "name": "Meeting Room 1",
+      "floor": 1,
+      "x": 30,
+      "y": 10,
+      "type": "room",
+      "description": "First floor meeting room"
+    },
+    {
+      "id": "cafeteria",
+      "name": "Cafeteria",
+      "floor": 1,
+      "x": 40,
+      "y": 20,
+      "type": "facility",
+      "description": "Employee cafeteria"
+    },
+    {
+      "id": "office_201",
+      "name": "Office 201",
+      "floor": 2,
+      "x": 30,
+      "y": 10,
+      "type": "room",
+      "description": "Second floor office"
+    },
+    {
+      "id": "office_202",
+      "name": "Office 202",
+      "floor": 2,
+      "x": 40,
+      "y": 10,
+      "type": "room",
+      "description": "Second floor office"
+    },
+    {
+      "id": "conference_hall",
+      "name": "Conference Hall",
+      "floor": 2,
+      "x": 20,
+      "y": 20,
+      "type": "room",
+      "description": "Large conference hall"
+    }
+  ],
+  "edges": [
+    {
+      "from": "entrance",
+      "to": "reception",
+      "weight": 10,
+      "description": "Direct path from entrance to reception"
+    },
+    {
+      "from": "reception",
+      "to": "elevator1",
+      "weight": 10,
+      "description": "Path to elevator"
+    },
+    {
+      "from": "elevator1",
+      "to": "meeting_room_1",
+      "weight": 15,
+      "description": "Path to meeting room"
+    },
+    {
+      "from": "elevator1",
+      "to": "cafeteria",
+      "weight": 25,
+      "description": "Path to cafeteria"
+    },
+    {
+      "from": "elevator1",
+      "to": "office_201",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Elevator to floor 2"
+    },
+    {
+      "from": "office_201",
+      "to": "office_202",
+      "weight": 10,
+      "description": "Adjacent offices"
+    },
+    {
+      "from": "office_201",
+      "to": "conference_hall",
+      "weight": 15,
+      "description": "Path to conference hall"
+    }
+  ]
+}
+

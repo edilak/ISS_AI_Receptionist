@@ -1,0 +1,130 @@
+{
+  "description": "Example floor plan configuration for visual path representation",
+  "building": {
+    "name": "ISS Main Building",
+    "address": "Example Address"
+  },
+  "floors": [
+    {
+      "floor": 1,
+      "name": "Ground Floor",
+      "image": {
+        "url": "/images/floor1.png",
+        "width": 1000,
+        "height": 800,
+        "format": "png"
+      },
+      "scale": {
+        "pixelsPerMeter": 10,
+        "originX": 0,
+        "originY": 0
+      },
+      "nodes": [
+        {
+          "id": "entrance",
+          "pixelX": 50,
+          "pixelY": 400,
+          "realX": 0,
+          "realY": 0,
+          "marker": "entrance"
+        },
+        {
+          "id": "reception",
+          "pixelX": 200,
+          "pixelY": 400,
+          "realX": 10,
+          "realY": 0,
+          "marker": "reception"
+        },
+        {
+          "id": "elevator1",
+          "pixelX": 400,
+          "pixelY": 400,
+          "realX": 20,
+          "realY": 0,
+          "marker": "elevator"
+        },
+        {
+          "id": "meeting_room_1",
+          "pixelX": 600,
+          "pixelY": 300,
+          "realX": 30,
+          "realY": 10,
+          "marker": "room"
+        },
+        {
+          "id": "cafeteria",
+          "pixelX": 800,
+          "pixelY": 200,
+          "realX": 40,
+          "realY": 20,
+          "marker": "facility"
+        }
+      ],
+      "paths": [
+        {
+          "from": "entrance",
+          "to": "reception",
+          "waypoints": [
+            { "pixelX": 125, "pixelY": 400 }
+          ]
+        },
+        {
+          "from": "reception",
+          "to": "elevator1",
+          "waypoints": [
+            { "pixelX": 300, "pixelY": 400 }
+          ]
+        }
+      ]
+    },
+    {
+      "floor": 2,
+      "name": "Second Floor",
+      "image": {
+        "url": "/images/floor2.png",
+        "width": 1000,
+        "height": 800,
+        "format": "png"
+      },
+      "scale": {
+        "pixelsPerMeter": 10,
+        "originX": 0,
+        "originY": 0
+      },
+      "nodes": [
+        {
+          "id": "office_201",
+          "pixelX": 600,
+          "pixelY": 300,
+          "realX": 30,
+          "realY": 10,
+          "marker": "room"
+        },
+        {
+          "id": "office_202",
+          "pixelX": 800,
+          "pixelY": 300,
+          "realX": 40,
+          "realY": 10,
+          "marker": "room"
+        },
+        {
+          "id": "conference_hall",
+          "pixelX": 400,
+          "pixelY": 200,
+          "realX": 20,
+          "realY": 20,
+          "marker": "room"
+        }
+      ]
+    }
+  ],
+  "instructions": {
+    "note": "Provide floor plan images in the public/images/ directory",
+    "supportedFormats": ["png", "jpg", "jpeg", "svg"],
+    "recommendedSize": "1000x800 pixels or larger",
+    "coordinateSystem": "Top-left is (0,0), X increases right, Y increases down"
+  }
+}
+

@@ -1,0 +1,979 @@
+{
+  "description": "HSITP Building 8 - Floor Plan Configuration for Visual Path Representation (Production Ready)",
+  "building": {
+    "name": "HSITP Building 8",
+    "fullName": "Hong Kong-Shenzhen Innovation and Technology Park - Building 8",
+    "address": "Lok Ma Chau Loop, New Territories, Hong Kong",
+    "type": "Wet Laboratory Enabled Building",
+    "specifications": {
+      "gFloorArea": "Approx. 590 m²",
+      "typicalFloorArea": "Approx. 1,900 m² (1/F-7/F, 4/F omitted)",
+      "labProvisions": "Biosafety Level 3 / PRC P3 Lab provisions enabled"
+    }
+  },
+  "floors": [
+    {
+      "floor": 0,
+      "name": "Ground Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [],
+      "nodes": [
+        {
+          "id": "hsitp_main_entrance",
+          "pixelX": 140,
+          "pixelY": 820,
+          "realX": 0,
+          "realY": 0,
+          "marker": "entrance"
+        },
+        {
+          "id": "hsitp_reception",
+          "pixelX": 320,
+          "pixelY": 680,
+          "realX": 15,
+          "realY": 0,
+          "marker": "reception"
+        },
+        {
+          "id": "hsitp_lobby",
+          "pixelX": 540,
+          "pixelY": 520,
+          "realX": 30,
+          "realY": 0,
+          "marker": "lobby"
+        },
+        {
+          "id": "hsitp_lift_lobby",
+          "pixelX": 1075,
+          "pixelY": 360,
+          "realX": 45,
+          "realY": 0,
+          "marker": "elevator"
+        },
+        {
+          "id": "hsitp_stairs_main",
+          "pixelX": 1075,
+          "pixelY": 460,
+          "realX": 50,
+          "realY": 0,
+          "marker": "stairs"
+        },
+        {
+          "id": "hsitp_restroom_gf_m",
+          "pixelX": 1125,
+          "pixelY": 330,
+          "realX": 70,
+          "realY": 0,
+          "marker": "facility"
+        },
+        {
+          "id": "hsitp_restroom_gf_f",
+          "pixelX": 1125,
+          "pixelY": 220,
+          "realX": 75,
+          "realY": 0,
+          "marker": "facility"
+        }
+      ]
+    },
+    {
+      "floor": 1,
+      "name": "First Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [
+        {
+          "id": "zone_01_corner",
+          "pixelX": 820,
+          "pixelY": 220,
+          "label": "Zone 01 center"
+        },
+        {
+          "id": "zone_07_corner",
+          "pixelX": 960,
+          "pixelY": 650,
+          "label": "Zone 07 center"
+        },
+        {
+          "id": "lift_lobby",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "label": "Lift Lobby center"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "hsitp_zone_01",
+          "pixelX": 1405.7053275357084,
+          "pixelY": 447.31877918191486,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone",
+          "name": "hsitp_zone_01"
+        },
+        {
+          "id": "hsitp_zone_02",
+          "pixelX": 644.4439570081158,
+          "pixelY": 471.8937823367165,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone",
+          "name": "hsitp_zone_02"
+        },
+        {
+          "id": "hsitp_zone_03",
+          "pixelX": 292.5271279821426,
+          "pixelY": 475.9896161958501,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone",
+          "name": "hsitp_zone_03"
+        },
+        {
+          "id": "hsitp_zone_05",
+          "pixelX": 264.0958414512987,
+          "pixelY": 885.7500315480161,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone",
+          "name": "hsitp_zone_05"
+        },
+        {
+          "id": "hsitp_zone_06",
+          "pixelX": 1555.386141650845,
+          "pixelY": 1010.1828938254631,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone",
+          "name": "hsitp_zone_06"
+        },
+        {
+          "id": "hsitp_zone_07",
+          "pixelX": 1889.319872442919,
+          "pixelY": 1155.5580881727406,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone",
+          "name": "hsitp_zone_07"
+        },
+        {
+          "id": "hsitp_corridor_1",
+          "pixelX": 2016.761232529548,
+          "pixelY": 816.3648165293051,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor",
+          "name": "hsitp_corridor_1"
+        },
+        {
+          "id": "hsitp_lift_lobby_1",
+          "pixelX": 2285.5590417688686,
+          "pixelY": 818.1353400286129,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator",
+          "name": "hsitp_lift_lobby_1"
+        },
+        {
+          "id": "hsitp_stairs_1",
+          "pixelX": 2303.7524353895983,
+          "pixelY": 1118.1657082078925,
+          "realX": 85,
+          "realY": 20,
+          "marker": "stairs",
+          "name": "hsitp_stairs_1"
+        },
+        {
+          "id": "hsitp_tel_equip_1",
+          "pixelX": 815.7279073068139,
+          "pixelY": 709.7146256602548,
+          "realX": 35,
+          "realY": 20,
+          "marker": "facility",
+          "name": "hsitp_tel_equip_1"
+        },
+        {
+          "id": "hsitp_ahu_1_top",
+          "pixelX": 2244.308478381482,
+          "pixelY": 274.9229327035748,
+          "realX": 90,
+          "realY": 5,
+          "marker": "facility",
+          "name": "hsitp_ahu_1_top"
+        },
+        {
+          "id": "hsitp_ahu_1_bottom",
+          "pixelX": 600.5425596428526,
+          "pixelY": 1245.1167276594979,
+          "realX": 5,
+          "realY": 35,
+          "marker": "facility",
+          "name": "hsitp_ahu_1_bottom"
+        },
+        {
+          "id": "hsitp_lav_f_1",
+          "pixelX": 2296.410655071417,
+          "pixelY": 449.97710515404447,
+          "realX": 90,
+          "realY": 15,
+          "marker": "facility",
+          "name": "hsitp_lav_f_1"
+        },
+        {
+          "id": "hsitp_lav_m_1",
+          "pixelX": 2292.314813620118,
+          "pixelY": 641.1750283932145,
+          "realX": 90,
+          "realY": 25,
+          "marker": "facility",
+          "name": "hsitp_lav_m_1"
+        },
+        {
+          "id": "hsitp_meter_1",
+          "pixelX": 2012.7623446834318,
+          "pixelY": 700.9781687728723,
+          "realX": 88,
+          "realY": 20,
+          "marker": "facility",
+          "name": "hsitp_meter_1"
+        },
+        {
+          "id": "hsitp_pantry_1",
+          "pixelX": 2187.979368540573,
+          "pixelY": 1237.860503686611,
+          "realX": 82,
+          "realY": 30,
+          "marker": "facility",
+          "name": "hsitp_pantry_1"
+        }
+      ],
+      "paths": [
+        {
+          "from": "hsitp_lift_lobby_1",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2136.5960027353785,
+              "pixelY": 816.2063059977285
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_06",
+          "waypoints": [
+            {
+              "pixelX": 1705.8026273462008,
+              "pixelY": 819.6649761759185
+            },
+            {
+              "pixelX": 1705.7629785278482,
+              "pixelY": 1012.525816251245
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_07",
+          "waypoints": [
+            {
+              "pixelX": 1882.0391468717341,
+              "pixelY": 832.1902435506842
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_01",
+          "waypoints": [
+            {
+              "pixelX": 1872.5498809696046,
+              "pixelY": 801.9106729391011
+            },
+            {
+              "pixelX": 1853.7617550735883,
+              "pixelY": 455.3782755705833
+            },
+            {
+              "pixelX": 1425.8099985532217,
+              "pixelY": 455.3782755705833
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_tel_equip_1",
+          "waypoints": [
+            {
+              "pixelX": 763.8744306672,
+              "pixelY": 807.3774745985177
+            },
+            {
+              "pixelX": 765.9223513928494,
+              "pixelY": 709.3152277766761
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_05",
+          "waypoints": [
+            {
+              "pixelX": 266.2296943344129,
+              "pixelY": 801.4714896071821
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_02",
+          "waypoints": [
+            {
+              "pixelX": 499.6926570584365,
+              "pixelY": 803.519406536749
+            },
+            {
+              "pixelX": 503.7884985097352,
+              "pixelY": 473.804780876494
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_ahu_1_bottom",
+          "waypoints": [
+            {
+              "pixelX": 501.7405777840858,
+              "pixelY": 805.5673234663158
+            },
+            {
+              "pixelX": 509.93226068668315,
+              "pixelY": 1229.4861278866435
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_zone_03",
+          "waypoints": [
+            {
+              "pixelX": 497.64473633278715,
+              "pixelY": 805.5673234663158
+            },
+            {
+              "pixelX": 499.6926570584365,
+              "pixelY": 686.7881415514413
+            },
+            {
+              "pixelX": 290.80474304220485,
+              "pixelY": 690.8839754105749
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lift_lobby_1",
+          "to": "hsitp_pantry_1",
+          "waypoints": [
+            {
+              "pixelX": 2127.7896339496538,
+              "pixelY": 815.8069081141498
+            },
+            {
+              "pixelX": 2133.9333961266016,
+              "pixelY": 1239.7257125344775
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lift_lobby_1",
+          "to": "hsitp_stairs_1",
+          "waypoints": [
+            {
+              "pixelX": 2129.837554675303,
+              "pixelY": 817.8548250437166
+            },
+            {
+              "pixelX": 2129.837554675303,
+              "pixelY": 1041.0777703664978
+            },
+            {
+              "pixelX": 2305.9587370811455,
+              "pixelY": 1041.0777703664978
+            },
+            {
+              "pixelX": 2305.9587370811455,
+              "pixelY": 1041.0777703664978
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lift_lobby_1",
+          "to": "hsitp_lav_m_1",
+          "waypoints": [
+            {
+              "pixelX": 2125.7417132240043,
+              "pixelY": 813.7589911845829
+            },
+            {
+              "pixelX": 2119.5979510470565,
+              "pixelY": 641.7339691009716
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lift_lobby_1",
+          "to": "hsitp_lav_f_1",
+          "waypoints": [
+            {
+              "pixelX": 2123.693792498355,
+              "pixelY": 813.7589911845829
+            },
+            {
+              "pixelX": 2123.693792498355,
+              "pixelY": 449.2297777216924
+            }
+          ]
+        },
+        {
+          "from": "hsitp_corridor_1",
+          "to": "hsitp_meter_1",
+          "waypoints": []
+        },
+        {
+          "from": "hsitp_ahu_1_top",
+          "to": "hsitp_lift_lobby_1",
+          "waypoints": [
+            {
+              "pixelX": 2121.6458717727055,
+              "pixelY": 273.10892177894755
+            },
+            {
+              "pixelX": 2123.693792498355,
+              "pixelY": 819.9027419732834
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "floor": 2,
+      "name": "Second Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp"
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "nodes": [
+        {
+          "id": "hsitp_zone_01_2",
+          "pixelX": 820,
+          "pixelY": 220,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_02_2",
+          "pixelX": 540,
+          "pixelY": 220,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_03_2",
+          "pixelX": 270,
+          "pixelY": 220,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_05_2",
+          "pixelX": 260,
+          "pixelY": 640,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_06_2",
+          "pixelX": 620,
+          "pixelY": 650,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_07_2",
+          "pixelX": 960,
+          "pixelY": 650,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_corridor_2",
+          "pixelX": 620,
+          "pixelY": 380,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor"
+        },
+        {
+          "id": "hsitp_lift_lobby_2",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator"
+        },
+        {
+          "id": "hsitp_lav_f_2",
+          "pixelX": 1125,
+          "pixelY": 280,
+          "realX": 90,
+          "realY": 15,
+          "marker": "facility"
+        },
+        {
+          "id": "hsitp_lav_m_2",
+          "pixelX": 1125,
+          "pixelY": 420,
+          "realX": 90,
+          "realY": 25,
+          "marker": "facility"
+        },
+        {
+          "id": "hsitp_pantry_2",
+          "pixelX": 1035,
+          "pixelY": 560,
+          "realX": 82,
+          "realY": 30,
+          "marker": "facility"
+        }
+      ]
+    },
+    {
+      "floor": 3,
+      "name": "Third Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [],
+      "nodes": [
+        {
+          "id": "hsitp_zone_01_3",
+          "pixelX": 820,
+          "pixelY": 220,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_02_3",
+          "pixelX": 540,
+          "pixelY": 220,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_03_3",
+          "pixelX": 270,
+          "pixelY": 220,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_05_3",
+          "pixelX": 260,
+          "pixelY": 640,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_06_3",
+          "pixelX": 620,
+          "pixelY": 650,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_07_3",
+          "pixelX": 960,
+          "pixelY": 650,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_corridor_3",
+          "pixelX": 620,
+          "pixelY": 380,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor"
+        },
+        {
+          "id": "hsitp_lift_lobby_3",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator"
+        }
+      ]
+    },
+    {
+      "floor": 5,
+      "name": "Fifth Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [],
+      "nodes": [
+        {
+          "id": "hsitp_zone_01_5",
+          "pixelX": 820,
+          "pixelY": 220,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_02_5",
+          "pixelX": 540,
+          "pixelY": 220,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_03_5",
+          "pixelX": 270,
+          "pixelY": 220,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_05_5",
+          "pixelX": 260,
+          "pixelY": 640,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_06_5",
+          "pixelX": 620,
+          "pixelY": 650,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_07_5",
+          "pixelX": 960,
+          "pixelY": 650,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_corridor_5",
+          "pixelX": 620,
+          "pixelY": 380,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor"
+        },
+        {
+          "id": "hsitp_lift_lobby_5",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator"
+        }
+      ]
+    },
+    {
+      "floor": 6,
+      "name": "Sixth Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [],
+      "nodes": [
+        {
+          "id": "hsitp_zone_01_6",
+          "pixelX": 820,
+          "pixelY": 220,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_02_6",
+          "pixelX": 540,
+          "pixelY": 220,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_03_6",
+          "pixelX": 270,
+          "pixelY": 220,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_05_6",
+          "pixelX": 260,
+          "pixelY": 640,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_06_6",
+          "pixelX": 620,
+          "pixelY": 650,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_07_6",
+          "pixelX": 960,
+          "pixelY": 650,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_corridor_6",
+          "pixelX": 620,
+          "pixelY": 380,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor"
+        },
+        {
+          "id": "hsitp_lift_lobby_6",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator"
+        }
+      ]
+    },
+    {
+      "floor": 7,
+      "name": "Seventh Floor",
+      "image": {
+        "url": "/images/hsipt_floorplan_lb03_8.webp",
+        "width": 1200,
+        "height": 900,
+        "format": "webp",
+        "naturalWidth": 1200,
+        "naturalHeight": 900,
+        "aspectRatio": 1.333
+      },
+      "scale": {
+        "pixelsPerMeter": 12,
+        "originX": 0,
+        "originY": 0
+      },
+      "transform": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "referencePoints": [],
+      "nodes": [
+        {
+          "id": "hsitp_zone_01_7",
+          "pixelX": 820,
+          "pixelY": 220,
+          "realX": 20,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_02_7",
+          "pixelX": 540,
+          "pixelY": 220,
+          "realX": 40,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_03_7",
+          "pixelX": 270,
+          "pixelY": 220,
+          "realX": 60,
+          "realY": 10,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_05_7",
+          "pixelX": 260,
+          "pixelY": 640,
+          "realX": 20,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_06_7",
+          "pixelX": 620,
+          "pixelY": 650,
+          "realX": 40,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_zone_07_7",
+          "pixelX": 960,
+          "pixelY": 650,
+          "realX": 60,
+          "realY": 30,
+          "marker": "zone"
+        },
+        {
+          "id": "hsitp_corridor_7",
+          "pixelX": 620,
+          "pixelY": 380,
+          "realX": 40,
+          "realY": 20,
+          "marker": "corridor"
+        },
+        {
+          "id": "hsitp_lift_lobby_7",
+          "pixelX": 1075,
+          "pixelY": 380,
+          "realX": 80,
+          "realY": 20,
+          "marker": "elevator"
+        }
+      ]
+    }
+  ],
+  "instructions": {
+    "note": "Floor plan images should be placed in client/public/images/ directory. Building 8 has 8 levels: G/F (0), 1/F (1), 2/F (2), 3/F (3), 5/F (5), 6/F (6), 7/F (7). Floor 4/F is omitted.",
+    "supportedFormats": [
+      "png",
+      "jpg",
+      "jpeg",
+      "svg",
+      "webp"
+    ],
+    "recommendedSize": "1200x900 pixels or larger",
+    "coordinateSystem": "Top-left is (0,0), X increases right, Y increases down",
+    "buildingInfo": "HSITP Building 8 is a wet laboratory enabled building with Biosafety Level 3 / PRC P3 Lab provisions. Typical floor area: G/F ~590 m², 1/F-7/F ~1,900 m² each.",
+    "zoneLayout": "Each typical floor has zones 01, 02, 03, 05, 06, 07 (no zone 04) arranged around a central horizontal corridor. Service areas include TEL EQUIP RM, AHU RM, LAV (Male/Female), METER RM, LIFT LOBBY, and COMMON PANTRY."
+  }
+}
