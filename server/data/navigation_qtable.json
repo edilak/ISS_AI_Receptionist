@@ -14,7 +14,7 @@
     "totalEpisodes": 0,
     "avgReward": 0,
     "avgPathLength": 0,
-    "explorationRate": 0.1,
+    "explorationRate": 0.15,
     "qTableSize": 0
   }
 }

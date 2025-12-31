@@ -6,7 +6,7 @@ An AI-powered virtual receptionist chatbot for ISS Facility Services Limited, si
 
 ## Features
 
-- 🤖 **AI-Powered Chatbot**: Uses Google Generative AI (Gemini) for natural language understanding
+- 🤖 **AI-Powered Chatbot**: Uses Azure OpenAI (GPT-4) for natural language understanding
 - 🗺️ **Path Finder**: Intelligent shortest path calculation between locations
 - 🌐 **Multi-Language Support**: English, Cantonese (粵), and Mandarin (普)
 - 🎨 **Modern UI**: Beautiful, responsive interface inspired by MTR's design
@@ -36,7 +36,7 @@ ISS_AI_Receptionist/
 
 - Node.js (v14 or higher)
 - npm or yarn
-- Google API Key (for Gemini AI)
+- Azure OpenAI API Key and Endpoint (for GPT-4)
 
 ## Installation
 
@@ -51,10 +51,20 @@ ISS_AI_Receptionist/
    ```bash
    cp .env.example .env
    ```
-   Then edit `.env` and add your Google API Key:
+   Then edit `.env` and add your Azure OpenAI credentials:
    ```
-   GOOGLE_API_KEY=your_actual_api_key_here
+   AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+   AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+   AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4
+   AZURE_OPENAI_API_VERSION=2024-12-01-preview
    ```
+   
+   **Getting Azure OpenAI Credentials:**
+   1. Go to [Azure Portal](https://portal.azure.com)
+   2. Create or navigate to your Azure OpenAI resource
+   3. Go to "Keys and Endpoint" to get your API key and endpoint
+   4. Go to "Deployments" to create a GPT-4 deployment (or use existing one)
+   5. Use the deployment name in `AZURE_OPENAI_DEPLOYMENT_NAME`
 
 ## Running the Application
 

@@ -242,13 +242,15 @@ class PathfindingEngine {
       return this.findPathWithSimpleRL(startId, goalId, opts);
     }
 
-    // RL-based pathfinding using AdvancedRLAgent
+    // RL-based pathfinding using AdvancedRLAgent with improved strategy
     const path = [];
-    const visited = new Set();
+    const visited = new Map(); // Track visit count to detect loops
+    const visitOrder = []; // Track visit order for better backtracking
     let currentNodeId = startId;
     let totalDistance = 0;
     let nodesExplored = 0;
-    const maxSteps = this.graph.nodes.length * 2; // Prevent infinite loops
+    const maxSteps = Math.min(this.graph.nodes.length * 3, 500); // Reasonable limit
+    const maxRevisits = 2; // Maximum times to revisit a node
 
     path.push({
       id: startNode.id,
@@ -263,7 +265,11 @@ class PathfindingEngine {
       edgeDescription: ''
     });
 
-    visited.add(startId);
+    visited.set(startId, 1);
+    visitOrder.push(startId);
+
+    // Use heuristic to guide initial exploration (when Q-values are low)
+    const useHeuristicGuidance = this.rlAgent.stats.totalEpisodes < 10;
 
     while (currentNodeId !== goalId && nodesExplored < maxSteps) {
       nodesExplored++;
@@ -271,52 +277,104 @@ class PathfindingEngine {
       // Get available actions (neighbors)
       const neighbors = this.adjacencyList.get(currentNodeId) || [];
       
-      // Filter out visited nodes to avoid cycles (but allow revisiting if stuck)
-      const unvisitedNeighbors = neighbors.filter(n => !visited.has(n.nodeId));
-      const availableActions = unvisitedNeighbors.length > 0 
-        ? unvisitedNeighbors.map(n => n.nodeId)
-        : neighbors.map(n => n.nodeId); // Allow revisiting if all neighbors visited
-
-      if (availableActions.length === 0) {
+      if (neighbors.length === 0) {
         // Dead end - backtrack
         if (path.length > 1) {
           path.pop();
-          visited.delete(currentNodeId);
+          visitOrder.pop();
           currentNodeId = path[path.length - 1].id;
+          const visitCount = visited.get(currentNodeId) || 0;
+          visited.set(currentNodeId, visitCount - 1);
           continue;
         } else {
           break; // No path found
         }
       }
 
-      // Use RL agent to select next action
-      const nextNodeId = this.rlAgent.selectAction(
-        currentNodeId,
-        availableActions,
-        this.graph,
-        true // Use exploration
-      );
+      // Filter neighbors based on visit count
+      const unvisitedNeighbors = neighbors.filter(n => {
+        const visitCount = visited.get(n.nodeId) || 0;
+        return visitCount < maxRevisits;
+      });
+      
+      // Prefer unvisited, but allow some revisiting
+      let availableActions = unvisitedNeighbors.length > 0 
+        ? unvisitedNeighbors.map(n => n.nodeId)
+        : neighbors.map(n => n.nodeId);
 
-      // Find the edge used
-      const edge = neighbors.find(n => n.nodeId === nextNodeId);
-      if (!edge) {
-        break; // Invalid action
+      // If using heuristic guidance and Q-values are low, prioritize closer nodes
+      if (useHeuristicGuidance && availableActions.length > 1) {
+        const currentNode = this.nodeById.get(currentNodeId);
+        availableActions.sort((a, b) => {
+          const nodeA = this.nodeById.get(a);
+          const nodeB = this.nodeById.get(b);
+          const distA = this.heuristics.euclidean(nodeA, goalNode);
+          const distB = this.heuristics.euclidean(nodeB, goalNode);
+          return distA - distB;
+        });
       }
 
-      // Calculate reward for this step
+      if (availableActions.length === 0) {
+        // All neighbors visited too many times - backtrack
+        if (path.length > 1) {
+          path.pop();
+          visitOrder.pop();
+          currentNodeId = path[path.length - 1].id;
+          const visitCount = visited.get(currentNodeId) || 0;
+          visited.set(currentNodeId, Math.max(0, visitCount - 1));
+          continue;
+        } else {
+          break; // No path found
+        }
+      }
+
+      // Use RL agent to select next action (with reduced exploration if we're close to goal)
+      const currentNode = this.nodeById.get(currentNodeId);
+      const distanceToGoal = this.heuristics.euclidean(currentNode, goalNode);
+      const useExploration = distanceToGoal > 50; // Reduce exploration when close to goal
+      
+      let nextNodeId;
+      try {
+        nextNodeId = this.rlAgent.selectAction(
+          currentNodeId,
+          availableActions,
+          this.graph,
+          useExploration
+        );
+      } catch (error) {
+        console.warn(`⚠️ RL agent selectAction error: ${error.message}, using first available action`);
+        nextNodeId = availableActions[0];
+      }
+
+      // Validate selected action
+      const edge = neighbors.find(n => n.nodeId === nextNodeId);
+      if (!edge) {
+        // Invalid action selected, use heuristic fallback
+        const nextNode = this.nodeById.get(availableActions[0]);
+        if (!nextNode) break;
+        nextNodeId = availableActions[0];
+        const fallbackEdge = neighbors.find(n => n.nodeId === nextNodeId);
+        if (!fallbackEdge) break;
+      }
+
+      const edgeUsed = edge || neighbors.find(n => n.nodeId === nextNodeId);
       const nextNode = this.nodeById.get(nextNodeId);
-      const distanceToGoal = this.heuristics.euclidean(nextNode, goalNode);
-      const prevDistance = this.heuristics.euclidean(
-        this.nodeById.get(currentNodeId),
-        goalNode
-      );
+
+      // Calculate improved reward structure
+      const distanceToGoalAfter = this.heuristics.euclidean(nextNode, goalNode);
+      const distanceToGoalBefore = this.heuristics.euclidean(currentNode, goalNode);
       
-      // Reward: positive for getting closer, negative for getting farther
-      let stepReward = (prevDistance - distanceToGoal) * 10;
+      // Base reward: progress toward goal (normalized)
+      const progress = (distanceToGoalBefore - distanceToGoalAfter) / Math.max(distanceToGoalBefore, 1);
+      let stepReward = progress * 100; // Scale progress reward
       
-      // Penalty for revisiting
-      if (visited.has(nextNodeId)) {
-        stepReward -= 5;
+      // Step penalty (encourage shorter paths)
+      stepReward -= 1;
+      
+      // Penalty for revisiting (increases with revisit count)
+      const revisitCount = visited.get(nextNodeId) || 0;
+      if (revisitCount > 0) {
+        stepReward -= 10 * revisitCount; // Increasing penalty for revisits
       }
       
       // Large reward for reaching goal
@@ -325,11 +383,17 @@ class PathfindingEngine {
       }
       
       // Penalty for floor changes if accessibility mode
-      if (opts.accessibilityMode && edge.floorChange) {
-        const nextNode = this.nodeById.get(nextNodeId);
+      if (opts.accessibilityMode && edgeUsed.floorChange) {
         if (nextNode?.type === 'stairs') {
           stepReward -= 50;
         }
+      }
+
+      // Bonus for moving toward goal (heuristic guidance)
+      if (distanceToGoalAfter < distanceToGoalBefore) {
+        stepReward += 5; // Small bonus for progress
+      } else {
+        stepReward -= 20; // Penalty for moving away
       }
 
       // Get next available actions for Q-learning update
@@ -337,20 +401,26 @@ class PathfindingEngine {
       const nextActions = nextNeighbors.map(n => n.nodeId);
 
       // Update RL agent
-      this.rlAgent.updateQValue(
-        currentNodeId,
-        nextNodeId,
-        stepReward,
-        nextNodeId,
-        nextActions,
-        this.graph,
-        nextNodeId === goalId
-      );
+      try {
+        this.rlAgent.updateQValue(
+          currentNodeId,
+          nextNodeId,
+          stepReward,
+          nextNodeId,
+          nextActions,
+          this.graph,
+          nextNodeId === goalId
+        );
+      } catch (error) {
+        console.warn(`⚠️ RL agent updateQValue error: ${error.message}`);
+      }
 
       // Move to next node
-      totalDistance += edge.weight;
+      totalDistance += edgeUsed.weight;
       currentNodeId = nextNodeId;
-      visited.add(nextNodeId);
+      const currentVisitCount = visited.get(nextNodeId) || 0;
+      visited.set(nextNodeId, currentVisitCount + 1);
+      visitOrder.push(nextNodeId);
 
       path.push({
         id: nextNode.id,
@@ -361,13 +431,38 @@ class PathfindingEngine {
         type: nextNode.type,
         description: nextNode.description,
         image: nextNode.image,
-        floorChange: edge.floorChange || false,
-        edgeDescription: edge.description || ''
+        floorChange: edgeUsed.floorChange || false,
+        edgeDescription: edgeUsed.description || ''
       });
+
+      // Early termination if we're stuck in a loop
+      if (visitOrder.length > 10) {
+        const recentVisits = visitOrder.slice(-10);
+        const uniqueRecent = new Set(recentVisits);
+        if (uniqueRecent.size < 3) {
+          // Stuck in a small loop, try to break out
+          console.warn(`⚠️ Detected loop, attempting to break out`);
+          if (path.length > 3) {
+            // Backtrack more aggressively
+            path.pop();
+            path.pop();
+            visitOrder.pop();
+            visitOrder.pop();
+            currentNodeId = path[path.length - 1].id;
+            continue;
+          }
+        }
+      }
     }
 
     // Check if goal was reached
     const success = currentNodeId === goalId;
+    
+    if (!success && nodesExplored >= maxSteps) {
+      // RL pathfinding failed, try fallback with simple heuristic-based pathfinding
+      console.warn(`⚠️ RL pathfinding reached max steps (${maxSteps}), trying heuristic fallback`);
+      return this.findPathWithHeuristicFallback(startId, goalId, opts);
+    }
     
     if (success) {
       // Calculate final reward and update RL agent
@@ -385,18 +480,23 @@ class PathfindingEngine {
         const neighbors = this.adjacencyList.get(current.id) || [];
         const nextActions = neighbors.map(n => n.nodeId);
         
-        this.rlAgent.updateQValue(
-          current.id,
-          next.id,
-          finalReward / path.length,
-          next.id,
-          nextActions,
-          this.graph,
-          i === path.length - 2
-        );
+        try {
+          this.rlAgent.updateQValue(
+            current.id,
+            next.id,
+            finalReward / path.length,
+            next.id,
+            nextActions,
+            this.graph,
+            i === path.length - 2
+          );
+        } catch (error) {
+          console.warn(`⚠️ Error updating Q-value for ${current.id} → ${next.id}: ${error.message}`);
+        }
       }
       
       this.rlAgent.updateStats(path.length);
+      console.log(`✅ RL pathfinding succeeded: ${path.length} steps, ${totalDistance.toFixed(1)}m distance`);
     }
 
     const result = {
@@ -408,18 +508,102 @@ class PathfindingEngine {
     };
 
     if (!success) {
-      result.error = `No path found from ${startId} to ${goalId} (explored ${nodesExplored} nodes)`;
+      result.error = `No path found from ${startId} to ${goalId} (explored ${nodesExplored} nodes, max ${maxSteps})`;
+      console.warn(`❌ ${result.error}`);
     }
 
-    // Cache result
+    // Cache result only if successful
     if (success) {
       this.cacheResult(cacheKey, result);
     }
     
     // Update stats
-    this.updateStats(nodesExplored, path.length);
+    this.updateStats(nodesExplored, success ? path.length : 0);
 
     return result;
+  }
+
+  /**
+   * Fallback: Heuristic-based pathfinding when RL fails
+   */
+  findPathWithHeuristicFallback(startId, goalId, opts) {
+    const startNode = this.nodeById.get(startId);
+    const goalNode = this.nodeById.get(goalId);
+    
+    if (!startNode || !goalNode) {
+      return {
+        success: false,
+        error: `Node not found: ${!startNode ? startId : goalId}`,
+        path: [],
+        distance: Infinity,
+        nodesExplored: 0,
+        algorithm: 'Heuristic Fallback'
+      };
+    }
+
+    // Use greedy best-first search with heuristic
+    const openSet = new PriorityQueue();
+    const closedSet = new Set();
+    const cameFrom = new Map();
+    const gScore = new Map();
+    const edgeUsed = new Map();
+
+    gScore.set(startId, 0);
+    openSet.enqueue(startId, this.heuristics.euclidean(startNode, goalNode));
+
+    let nodesExplored = 0;
+    const maxExplorations = this.graph.nodes.length;
+
+    while (!openSet.isEmpty() && nodesExplored < maxExplorations) {
+      const currentId = openSet.dequeue();
+      nodesExplored++;
+
+      if (currentId === goalId) {
+        const path = this.reconstructPath(cameFrom, edgeUsed, currentId);
+        const totalDistance = gScore.get(currentId);
+        
+        return {
+          success: true,
+          path,
+          distance: totalDistance,
+          nodesExplored,
+          algorithm: 'Heuristic Fallback (Greedy Best-First)'
+        };
+      }
+
+      closedSet.add(currentId);
+      const neighbors = this.adjacencyList.get(currentId) || [];
+
+      for (const neighbor of neighbors) {
+        if (closedSet.has(neighbor.nodeId)) continue;
+
+        const tentativeGScore = gScore.get(currentId) + neighbor.weight;
+        
+        if (!gScore.has(neighbor.nodeId) || tentativeGScore < gScore.get(neighbor.nodeId)) {
+          const neighborNode = this.nodeById.get(neighbor.nodeId);
+          cameFrom.set(neighbor.nodeId, currentId);
+          edgeUsed.set(neighbor.nodeId, neighbor);
+          gScore.set(neighbor.nodeId, tentativeGScore);
+          
+          const fScore = tentativeGScore + this.heuristics.euclidean(neighborNode, goalNode);
+          
+          if (!openSet.contains(neighbor.nodeId)) {
+            openSet.enqueue(neighbor.nodeId, fScore);
+          } else {
+            openSet.updatePriority(neighbor.nodeId, fScore);
+          }
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error: `No path found from ${startId} to ${goalId} (heuristic fallback)`,
+      path: [],
+      distance: Infinity,
+      nodesExplored,
+      algorithm: 'Heuristic Fallback'
+    };
   }
 
   /**

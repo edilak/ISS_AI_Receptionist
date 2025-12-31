@@ -54,9 +54,11 @@ class NavigationService {
       this.pathfindingEngine = new PathfindingEngine(this.graph, {
         useRLOptimization: true,
         useAdvancedRL: true, // Use AdvancedRLAgent for RL-only pathfinding
-        learningRate: 0.1,
+        learningRate: 0.15, // Slightly higher learning rate for faster adaptation
         discountFactor: 0.95,
-        explorationRate: 0.1
+        explorationRate: 0.15, // Start with moderate exploration
+        explorationDecay: 0.998, // Slow decay to maintain some exploration
+        minExplorationRate: 0.05 // Keep minimum exploration for continuous learning
       });
 
       // Load saved Q-table if exists

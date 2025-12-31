@@ -4,18 +4,42 @@ const OpenAI = require('openai');
 const { getInstance: getNavigationService } = require('../lib/NavigationService');
 const { findShortestPath, findLocation, getLocationGraph } = require('./pathFinder');
 
-// Validate API key is present
-const apiKey = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-if (!apiKey) {
-  console.warn('⚠️  WARNING: OPENAI_API_KEY not found in environment variables!');
-  console.warn('   Please ensure your .env file contains: OPENAI_API_KEY=your_api_key_here');
+// Azure OpenAI Configuration
+const azureApiKey = process.env.AZURE_OPENAI_API_KEY;
+const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
+const azureDeploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
+const azureApiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-12-01-preview';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || azureDeploymentName;
+
+// Check for Azure OpenAI configuration
+if (!azureApiKey || !azureEndpoint) {
+  console.warn('⚠️  WARNING: Azure OpenAI configuration not found!');
+  console.warn('   Please ensure your .env file contains:');
+  console.warn('   - AZURE_OPENAI_API_KEY=your_azure_api_key');
+  console.warn('   - AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com');
+  console.warn('   - AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4 (optional, defaults to gpt-4)');
 } else {
-  const keyPreview = apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4);
-  console.log(`✅ OpenAI API Key loaded: ${keyPreview} | Model: ${OPENAI_MODEL}`);
+  const keyPreview = azureApiKey.substring(0, 8) + '...' + azureApiKey.substring(azureApiKey.length - 4);
+  // Normalize endpoint (remove trailing slash if present)
+  const normalizedEndpoint = azureEndpoint.replace(/\/$/, '');
+  const endpointPreview = normalizedEndpoint.replace(/https?:\/\//, '').split('/')[0];
+  console.log(`✅ Azure OpenAI configured: ${keyPreview} | Endpoint: ${endpointPreview} | Deployment: ${azureDeploymentName} | API Version: ${azureApiVersion}`);
 }
 
-const openai = apiKey ? new OpenAI({ apiKey }) : null;
+// Initialize Azure OpenAI client
+// Match Python AzureOpenAI pattern: api_version, azure_endpoint, api_key
+const openai = (azureApiKey && azureEndpoint) ? (() => {
+  // Normalize endpoint (ensure no trailing slash, then add deployment path)
+  const normalizedEndpoint = azureEndpoint.replace(/\/$/, '');
+  const baseURL = `${normalizedEndpoint}/openai/deployments/${azureDeploymentName}`;
+  
+  return new OpenAI({
+    apiKey: azureApiKey,
+    baseURL: baseURL,
+    defaultQuery: { 'api-version': azureApiVersion },
+    defaultHeaders: { 'api-key': azureApiKey },
+  });
+})() : null;
 
 // Navigation service instance
 let navigationService = null;
@@ -272,21 +296,35 @@ const buildStepSummary = (steps = []) => {
     .join('\n');
 };
 
-// Helper: run OpenAI chat completion
+// Helper: run Azure OpenAI chat completion
 async function runOpenAI(prompt, options = {}) {
   if (!openai) {
-    throw new Error('OpenAI client not initialized. Check OPENAI_API_KEY.');
+    throw new Error('Azure OpenAI client not initialized. Check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT.');
   }
   const { temperature = 0, system = 'You are a helpful assistant.' } = options;
-  const completion = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
-    temperature,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: prompt }
-    ]
-  });
-  return completion.choices[0]?.message?.content || '';
+  
+  try {
+    // For Azure OpenAI, we don't need to specify model in the request
+    // as it's already in the baseURL deployment path
+    const completion = await openai.chat.completions.create({
+      temperature,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt }
+      ]
+    });
+    return completion.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('❌ Azure OpenAI API Error:', error.message);
+    if (error.status === 401) {
+      throw new Error('Invalid Azure OpenAI API key. Please check AZURE_OPENAI_API_KEY.');
+    } else if (error.status === 404) {
+      throw new Error(`Deployment "${azureDeploymentName}" not found. Please check AZURE_OPENAI_DEPLOYMENT_NAME.`);
+    } else if (error.status === 429) {
+      throw new Error('Azure OpenAI rate limit exceeded. Please try again later.');
+    }
+    throw error;
+  }
 }
 
 // Chat endpoint
@@ -300,7 +338,7 @@ router.post('/message', async (req, res) => {
 
     if (!openai) {
       return res.status(500).json({ 
-        error: 'AI model not initialized. Please check OPENAI_API_KEY in .env file' 
+        error: 'AI model not initialized. Please check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in .env file' 
       });
     }
 
@@ -506,9 +544,13 @@ Keep it helpful and concise.`;
     
     let errorMessage = 'Failed to process chat message';
     if (error.message.includes('404') || error.message.includes('not found')) {
-      errorMessage = 'AI model not available. Please check your OpenAI API key.';
-    } else if (error.message.includes('API key')) {
-      errorMessage = 'Invalid API key. Please check your OPENAI_API_KEY in .env file.';
+      errorMessage = 'Azure OpenAI deployment not found. Please check your AZURE_OPENAI_DEPLOYMENT_NAME.';
+    } else if (error.message.includes('API key') || error.message.includes('401')) {
+      errorMessage = 'Invalid Azure OpenAI API key. Please check your AZURE_OPENAI_API_KEY in .env file.';
+    } else if (error.message.includes('rate limit')) {
+      errorMessage = 'Azure OpenAI rate limit exceeded. Please try again later.';
+    } else if (error.message.includes('endpoint') || error.message.includes('ENDPOINT')) {
+      errorMessage = 'Invalid Azure OpenAI endpoint. Please check your AZURE_OPENAI_ENDPOINT in .env file.';
     }
     
     res.status(500).json({ 
@@ -525,7 +567,9 @@ router.get('/health', async (req, res) => {
   res.json({ 
     status: 'ok', 
     service: 'Chat Service',
-    model: openai ? 'initialized' : 'not initialized',
+    provider: 'Azure OpenAI',
+    model: openai ? azureDeploymentName : 'not initialized',
+    endpoint: azureEndpoint ? azureEndpoint.replace(/https?:\/\//, '').split('/')[0] : 'not configured',
     navigationService: navigationService ? 'connected' : 'not available',
     stats: navStats
   });
