@@ -2,14 +2,141 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="ISS AI Receptionist - Virtual Assistant for Facility Services" />
-    <title>ISS AI Receptionist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0D1B3E" />
+    <meta name="description" content="ISS AI Receptionist - Your Intelligent Building Assistant for HSITP Building 8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Google Fonts - Professional Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    
+    <title>ISS AI Receptionist | HSITP Building 8</title>
+    
+    <!-- Favicon - Navy Blue -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle fill='%230D1B3E' cx='50' cy='50' r='50'/><text x='50' y='62' font-size='36' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='bold'>ISS</text></svg>">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%230D1B3E' rx='40' width='180' height='180'/><text x='90' y='115' font-size='70' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='bold'>ISS</text></svg>">
+    
+    <style>
+      /* Kiosk Mode - Prevent unwanted interactions */
+      body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        overscroll-behavior: none;
+      }
+      
+      /* Allow text selection in input fields */
+      input, textarea {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+      
+      /* Loading screen - Navy Blue Theme */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0D1B3E 0%, #152952 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      
+      #loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .loading-logo {
+        width: 100px;
+        height: 100px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+      
+      .loading-logo span {
+        font-family: 'Arial', sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        color: #0D1B3E;
+        letter-spacing: 0.05em;
+      }
+      
+      .loading-text {
+        font-family: 'Arial', sans-serif;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 24px;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #4A90D9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      .loading-tagline {
+        position: absolute;
+        bottom: 40px;
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-logo">
+        <span>ISS</span>
+      </div>
+      <p class="loading-text">Loading AI Receptionist...</p>
+      <div class="loading-spinner"></div>
+      <p class="loading-tagline">People and business do better in a Pure Space</p>
+    </div>
+    
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    
+    <script>
+      // Hide loading screen when app is ready
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+            setTimeout(function() {
+              loadingScreen.remove();
+            }, 500);
+          }
+        }, 500);
+      });
+    </script>
   </body>
 </html>
-

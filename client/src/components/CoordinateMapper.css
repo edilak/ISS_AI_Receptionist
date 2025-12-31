@@ -226,10 +226,18 @@
   cursor: pointer;
   font-size: 11px;
   width: 100%;
+  pointer-events: auto;
+  position: relative;
+  z-index: 30;
 }
 
 .btn-delete-marker:hover {
   background: #da190b;
+}
+
+.btn-delete-marker:active {
+  background: #b71c1c;
+  transform: scale(0.98);
 }
 
 .marker-list {

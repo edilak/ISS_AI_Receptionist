@@ -18,211 +18,233 @@
   "nodes": [
     {
       "id": "hsitp_main_entrance",
-      "name": "Main Entrance",
+      "name": "hsitp_main_entrance",
       "floor": 0,
-      "x": 0,
-      "y": 0,
+      "x": 196.83283227746026,
+      "y": 114.83811360891276,
       "type": "entrance",
-      "description": "Main building entrance from the park"
+      "description": "Main building entrance from the park",
+      "image": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_reception",
-      "name": "Reception Desk",
+      "name": "hsitp_reception",
       "floor": 0,
-      "x": 15,
-      "y": 0,
+      "x": 177.70082018330478,
+      "y": 79.36441263603204,
       "type": "reception",
-      "description": "Main reception and visitor information desk"
+      "description": "Main reception and visitor information desk",
+      "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lobby",
-      "name": "Main Lobby",
+      "name": "hsitp_lobby",
       "floor": 0,
-      "x": 30,
-      "y": 0,
+      "x": 178.11484716720645,
+      "y": 105.62413994099018,
       "type": "lobby",
-      "description": "Main lobby area"
+      "description": "Main lobby area",
+      "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby",
-      "name": "Lift Lobby",
+      "name": "hsitp_lift_lobby",
       "floor": 0,
-      "x": 45,
-      "y": 0,
+      "x": 190.27276901109204,
+      "y": 68.56910217350809,
       "type": "elevator",
-      "description": "Main lift lobby with passenger, service, and fireman lifts"
+      "description": "Main lift lobby with passenger, service, and fireman lifts",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_stairs_main",
-      "name": "Main Staircase",
+      "name": "hsitp_stairs_main",
       "floor": 0,
-      "x": 50,
-      "y": 0,
+      "x": 192.32068973674134,
+      "y": 90.38455529315621,
       "type": "stairs",
-      "description": "Main staircase for emergency and regular access"
+      "description": "Main staircase for emergency and regular access",
+      "image": "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=1000&q=80"
     },
     {
       "id": "hsitp_restroom_gf_m",
-      "name": "Men's Restroom (G/F)",
+      "name": "hsitp_restroom_gf_m",
       "floor": 0,
-      "x": 70,
-      "y": 0,
+      "x": 190.85557440787238,
+      "y": 50.53906545762651,
       "type": "facility",
-      "description": "Ground floor men's lavatory"
+      "description": "Ground floor men's lavatory",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_restroom_gf_f",
-      "name": "Women's Restroom (G/F)",
+      "name": "hsitp_restroom_gf_f",
       "floor": 0,
-      "x": 75,
-      "y": 0,
+      "x": 190.85557440787238,
+      "y": 37.61788442008737,
       "type": "facility",
-      "description": "Ground floor women's lavatory"
+      "description": "Ground floor women's lavatory",
+      "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_zone_01",
-      "name": "Zone 01",
+      "name": "hsitp_zone_01",
       "floor": 1,
-      "x": 20,
-      "y": 10,
+      "x": 117.1421106279757,
+      "y": 37.276564931826236,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02",
-      "name": "Zone 02",
+      "name": "hsitp_zone_02",
       "floor": 1,
-      "x": 40,
-      "y": 10,
+      "x": 53.703663084009655,
+      "y": 39.324481861393046,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03",
-      "name": "Zone 03",
+      "name": "hsitp_zone_03",
       "floor": 1,
-      "x": 60,
-      "y": 10,
+      "x": 24.37726066517855,
+      "y": 39.665801349654174,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05",
-      "name": "Zone 05",
+      "name": "hsitp_zone_05",
       "floor": 1,
-      "x": 20,
-      "y": 30,
+      "x": 22.00798678760823,
+      "y": 73.81250262900134,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06",
-      "name": "Zone 06",
+      "name": "hsitp_zone_06",
       "floor": 1,
-      "x": 40,
-      "y": 30,
+      "x": 129.6155118042371,
+      "y": 84.18190781878859,
       "type": "zone",
       "description": "Flexible space for wet lab or office use",
       "image": "/images/zone6.jpg"
     },
     {
       "id": "hsitp_zone_07",
-      "name": "Zone 07",
+      "name": "hsitp_zone_07",
       "floor": 1,
-      "x": 60,
-      "y": 30,
+      "x": 157.44332270357657,
+      "y": 96.29650734772838,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_1",
-      "name": "Central Corridor (1/F)",
+      "name": "hsitp_corridor_1",
       "floor": 1,
-      "x": 40,
-      "y": 20,
+      "x": 168.063436044129,
+      "y": 68.03040137744209,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_1",
-      "name": "Lift Lobby (1/F)",
+      "name": "hsitp_lift_lobby_1",
       "floor": 1,
-      "x": 80,
-      "y": 20,
+      "x": 190.46325348073904,
+      "y": 68.1779450023844,
       "type": "elevator",
-      "description": "Lift lobby on first floor"
+      "description": "Lift lobby on first floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_stairs_1",
-      "name": "Stairs (1/F)",
+      "name": "hsitp_stairs_1",
       "floor": 1,
-      "x": 85,
-      "y": 20,
+      "x": 191.97936961579987,
+      "y": 93.18047568399105,
       "type": "stairs",
-      "description": "Staircase on first floor"
+      "description": "Staircase on first floor",
+      "image": "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=1000&q=80"
     },
     {
       "id": "hsitp_tel_equip_1",
-      "name": "TEL EQUIP RM (1/F)",
+      "name": "hsitp_tel_equip_1",
       "floor": 1,
-      "x": 35,
-      "y": 20,
+      "x": 67.97732560890115,
+      "y": 59.1428854716879,
       "type": "facility",
-      "description": "Telecommunications Equipment Room"
+      "description": "Telecommunications Equipment Room",
+      "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_ahu_1_top",
-      "name": "AHU RM (1/F - Top)",
+      "name": "hsitp_ahu_1_top",
       "floor": 1,
-      "x": 90,
-      "y": 5,
+      "x": 187.02570653179018,
+      "y": 22.910244391964568,
       "type": "facility",
-      "description": "Air Handling Unit Room - Top"
+      "description": "Air Handling Unit Room - Top",
+      "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_ahu_1_bottom",
-      "name": "AHU RM (1/F - Bottom)",
+      "name": "hsitp_ahu_1_bottom",
       "floor": 1,
-      "x": 5,
-      "y": 35,
+      "x": 50.045213303571046,
+      "y": 103.75972730495816,
       "type": "facility",
-      "description": "Air Handling Unit Room - Bottom"
+      "description": "Air Handling Unit Room - Bottom",
+      "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lav_f_1",
-      "name": "Female LAV (1/F)",
+      "name": "hsitp_lav_f_1",
       "floor": 1,
-      "x": 90,
-      "y": 15,
+      "x": 191.36755458928474,
+      "y": 37.498092096170375,
       "type": "facility",
-      "description": "Female lavatory on first floor"
+      "description": "Female lavatory on first floor",
+      "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_lav_m_1",
-      "name": "Male LAV (1/F)",
+      "name": "hsitp_lav_m_1",
       "floor": 1,
-      "x": 90,
-      "y": 25,
+      "x": 191.02623446834318,
+      "y": 53.431252366101205,
       "type": "facility",
-      "description": "Male lavatory on first floor"
+      "description": "Male lavatory on first floor",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_meter_1",
-      "name": "METER RM (1/F)",
+      "name": "hsitp_meter_1",
       "floor": 1,
-      "x": 88,
-      "y": 20,
+      "x": 167.73019539028599,
+      "y": 58.41484739773936,
       "type": "facility",
-      "description": "Meter Room on first floor"
+      "description": "Meter Room on first floor",
+      "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_pantry_1",
-      "name": "Common Pantry (1/F)",
+      "name": "hsitp_pantry_1",
       "floor": 1,
-      "x": 82,
-      "y": 30,
+      "x": 182.33161404504776,
+      "y": 103.15504197388425,
       "type": "facility",
-      "description": "Common pantry with kitchen facilities"
+      "description": "Common pantry with kitchen facilities",
+      "image": "https://images.unsplash.com/photo-1520880867055-1e30d1cb001c?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_01_2",
@@ -231,7 +253,8 @@
       "x": 20,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02_2",
@@ -240,7 +263,8 @@
       "x": 40,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03_2",
@@ -249,7 +273,8 @@
       "x": 60,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05_2",
@@ -258,7 +283,8 @@
       "x": 20,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06_2",
@@ -267,7 +293,8 @@
       "x": 40,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_07_2",
@@ -276,7 +303,8 @@
       "x": 60,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_2",
@@ -285,7 +313,8 @@
       "x": 40,
       "y": 20,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_2",
@@ -294,7 +323,8 @@
       "x": 80,
       "y": 20,
       "type": "elevator",
-      "description": "Lift lobby on second floor"
+      "description": "Lift lobby on second floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_lav_f_2",
@@ -303,7 +333,8 @@
       "x": 90,
       "y": 15,
       "type": "facility",
-      "description": "Female lavatory on second floor"
+      "description": "Female lavatory on second floor",
+      "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_lav_m_2",
@@ -312,7 +343,8 @@
       "x": 90,
       "y": 25,
       "type": "facility",
-      "description": "Male lavatory on second floor"
+      "description": "Male lavatory on second floor",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_pantry_2",
@@ -321,7 +353,8 @@
       "x": 82,
       "y": 30,
       "type": "facility",
-      "description": "Common pantry with kitchen facilities"
+      "description": "Common pantry with kitchen facilities",
+      "image": "https://images.unsplash.com/photo-1520880867055-1e30d1cb001c?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_01_3",
@@ -330,7 +363,8 @@
       "x": 20,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02_3",
@@ -339,7 +373,8 @@
       "x": 40,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03_3",
@@ -348,7 +383,8 @@
       "x": 60,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05_3",
@@ -357,7 +393,8 @@
       "x": 20,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06_3",
@@ -366,7 +403,8 @@
       "x": 40,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_07_3",
@@ -375,7 +413,8 @@
       "x": 60,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_3",
@@ -384,7 +423,8 @@
       "x": 40,
       "y": 20,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_3",
@@ -393,7 +433,8 @@
       "x": 80,
       "y": 20,
       "type": "elevator",
-      "description": "Lift lobby on third floor"
+      "description": "Lift lobby on third floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_zone_01_5",
@@ -402,7 +443,8 @@
       "x": 20,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02_5",
@@ -411,7 +453,8 @@
       "x": 40,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03_5",
@@ -420,7 +463,8 @@
       "x": 60,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05_5",
@@ -429,7 +473,8 @@
       "x": 20,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06_5",
@@ -438,7 +483,8 @@
       "x": 40,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_07_5",
@@ -447,7 +493,8 @@
       "x": 60,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_5",
@@ -456,7 +503,8 @@
       "x": 40,
       "y": 20,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_5",
@@ -465,7 +513,8 @@
       "x": 80,
       "y": 20,
       "type": "elevator",
-      "description": "Lift lobby on fifth floor"
+      "description": "Lift lobby on fifth floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_zone_01_6",
@@ -474,7 +523,8 @@
       "x": 20,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02_6",
@@ -483,7 +533,8 @@
       "x": 40,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03_6",
@@ -492,7 +543,8 @@
       "x": 60,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05_6",
@@ -501,7 +553,8 @@
       "x": 20,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06_6",
@@ -510,7 +563,8 @@
       "x": 40,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_07_6",
@@ -519,7 +573,8 @@
       "x": 60,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_6",
@@ -528,7 +583,8 @@
       "x": 40,
       "y": 20,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_6",
@@ -537,7 +593,8 @@
       "x": 80,
       "y": 20,
       "type": "elevator",
-      "description": "Lift lobby on sixth floor"
+      "description": "Lift lobby on sixth floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "hsitp_zone_01_7",
@@ -546,7 +603,8 @@
       "x": 20,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_02_7",
@@ -555,7 +613,8 @@
       "x": 40,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_03_7",
@@ -564,7 +623,8 @@
       "x": 60,
       "y": 10,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_05_7",
@@ -573,7 +633,8 @@
       "x": 20,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_06_7",
@@ -582,7 +643,8 @@
       "x": 40,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_zone_07_7",
@@ -591,7 +653,8 @@
       "x": 60,
       "y": 30,
       "type": "zone",
-      "description": "Flexible space for wet lab or office use"
+      "description": "Flexible space for wet lab or office use",
+      "image": "https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_corridor_7",
@@ -600,7 +663,8 @@
       "x": 40,
       "y": 20,
       "type": "corridor",
-      "description": "Main horizontal corridor connecting all zones"
+      "description": "Main horizontal corridor connecting all zones",
+      "image": "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
     },
     {
       "id": "hsitp_lift_lobby_7",
@@ -609,72 +673,467 @@
       "x": 80,
       "y": 20,
       "type": "elevator",
-      "description": "Lift lobby on seventh floor"
+      "description": "Lift lobby on seventh floor",
+      "image": "https://images.unsplash.com/photo-1505693196193-1d5b0e3b5a42?auto=format&fit=crop&w=800&q=80"
     }
   ],
   "edges": [
-    { "from": "hsitp_main_entrance", "to": "hsitp_reception", "weight": 15, "description": "Direct path from entrance to reception" },
-    { "from": "hsitp_reception", "to": "hsitp_lobby", "weight": 15, "description": "Path to main lobby" },
-    { "from": "hsitp_lobby", "to": "hsitp_lift_lobby", "weight": 15, "description": "Path to lift lobby" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_stairs_main", "weight": 5, "description": "Adjacent to stairs" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_restroom_gf_m", "weight": 25, "description": "Path to men's restroom" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_restroom_gf_f", "weight": 30, "description": "Path to women's restroom" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_1", "weight": 5, "floorChange": true, "description": "Lift to 1/F" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_2", "weight": 5, "floorChange": true, "description": "Lift to 2/F" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_3", "weight": 5, "floorChange": true, "description": "Lift to 3/F" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_5", "weight": 5, "floorChange": true, "description": "Lift to 5/F" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_6", "weight": 5, "floorChange": true, "description": "Lift to 6/F" },
-    { "from": "hsitp_lift_lobby", "to": "hsitp_lift_lobby_7", "weight": 5, "floorChange": true, "description": "Lift to 7/F" },
-    { "from": "hsitp_lift_lobby_1", "to": "hsitp_corridor_1", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_01", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_02", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_03", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_05", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_06", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_zone_07", "weight": 15, "description": "Path to Zone 07" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_tel_equip_1", "weight": 5, "description": "Path to TEL EQUIP RM" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_lav_f_1", "weight": 20, "description": "Path to Female LAV" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_lav_m_1", "weight": 20, "description": "Path to Male LAV" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_meter_1", "weight": 15, "description": "Path to METER RM" },
-    { "from": "hsitp_corridor_1", "to": "hsitp_pantry_1", "weight": 15, "description": "Path to Common Pantry" },
-    { "from": "hsitp_lift_lobby_1", "to": "hsitp_stairs_1", "weight": 5, "description": "Adjacent to stairs" },
-    { "from": "hsitp_lift_lobby_2", "to": "hsitp_corridor_2", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_01_2", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_02_2", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_03_2", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_05_2", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_06_2", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_zone_07_2", "weight": 15, "description": "Path to Zone 07" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_lav_f_2", "weight": 20, "description": "Path to Female LAV" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_lav_m_2", "weight": 20, "description": "Path to Male LAV" },
-    { "from": "hsitp_corridor_2", "to": "hsitp_pantry_2", "weight": 15, "description": "Path to Common Pantry" },
-    { "from": "hsitp_lift_lobby_3", "to": "hsitp_corridor_3", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_01_3", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_02_3", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_03_3", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_05_3", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_06_3", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_3", "to": "hsitp_zone_07_3", "weight": 15, "description": "Path to Zone 07" },
-    { "from": "hsitp_lift_lobby_5", "to": "hsitp_corridor_5", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_01_5", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_02_5", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_03_5", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_05_5", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_06_5", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_5", "to": "hsitp_zone_07_5", "weight": 15, "description": "Path to Zone 07" },
-    { "from": "hsitp_lift_lobby_6", "to": "hsitp_corridor_6", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_01_6", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_02_6", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_03_6", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_05_6", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_06_6", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_6", "to": "hsitp_zone_07_6", "weight": 15, "description": "Path to Zone 07" },
-    { "from": "hsitp_lift_lobby_7", "to": "hsitp_corridor_7", "weight": 10, "description": "Path from lift lobby to corridor" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_01_7", "weight": 15, "description": "Path to Zone 01" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_02_7", "weight": 10, "description": "Path to Zone 02" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_03_7", "weight": 15, "description": "Path to Zone 03" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_05_7", "weight": 15, "description": "Path to Zone 05" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_06_7", "weight": 10, "description": "Path to Zone 06" },
-    { "from": "hsitp_corridor_7", "to": "hsitp_zone_07_7", "weight": 15, "description": "Path to Zone 07" }
+    {
+      "from": "hsitp_main_entrance",
+      "to": "hsitp_reception",
+      "weight": 15,
+      "description": "Direct path from entrance to reception"
+    },
+    {
+      "from": "hsitp_reception",
+      "to": "hsitp_lobby",
+      "weight": 15,
+      "description": "Path to main lobby"
+    },
+    {
+      "from": "hsitp_lobby",
+      "to": "hsitp_lift_lobby",
+      "weight": 15,
+      "description": "Path to lift lobby"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_stairs_main",
+      "weight": 5,
+      "description": "Adjacent to stairs"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_restroom_gf_m",
+      "weight": 25,
+      "description": "Path to men's restroom"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_restroom_gf_f",
+      "weight": 30,
+      "description": "Path to women's restroom"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_1",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 1/F"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_2",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 2/F"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_3",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 3/F"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_5",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 5/F"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_6",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 6/F"
+    },
+    {
+      "from": "hsitp_lift_lobby",
+      "to": "hsitp_lift_lobby_7",
+      "weight": 5,
+      "floorChange": true,
+      "description": "Lift to 7/F"
+    },
+    {
+      "from": "hsitp_lift_lobby_1",
+      "to": "hsitp_corridor_1",
+      "weight": 16,
+      "description": "Path from lift lobby to corridor",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_01",
+      "weight": 42,
+      "description": "Path to Zone 01",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_02",
+      "weight": 83,
+      "description": "Path to Zone 02",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_03",
+      "weight": 103,
+      "description": "Path to Zone 03",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_05",
+      "weight": 102,
+      "description": "Path to Zone 05",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_06",
+      "weight": 29,
+      "description": "Path to Zone 06",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_zone_07",
+      "weight": 21,
+      "description": "Path to Zone 07",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_tel_equip_1",
+      "weight": 70,
+      "description": "Path to TEL EQUIP RM",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_lav_f_1",
+      "weight": 27,
+      "description": "Path to Female LAV",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_lav_m_1",
+      "weight": 19,
+      "description": "Path to Male LAV",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_meter_1",
+      "weight": 7,
+      "description": "Path to METER RM"
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_pantry_1",
+      "weight": 27,
+      "description": "Path to Common Pantry",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_lift_lobby_1",
+      "to": "hsitp_stairs_1",
+      "weight": 18,
+      "description": "Adjacent to stairs",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_lift_lobby_2",
+      "to": "hsitp_corridor_2",
+      "weight": 10,
+      "description": "Path from lift lobby to corridor"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_01_2",
+      "weight": 15,
+      "description": "Path to Zone 01"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_02_2",
+      "weight": 10,
+      "description": "Path to Zone 02"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_03_2",
+      "weight": 15,
+      "description": "Path to Zone 03"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_05_2",
+      "weight": 15,
+      "description": "Path to Zone 05"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_06_2",
+      "weight": 10,
+      "description": "Path to Zone 06"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_zone_07_2",
+      "weight": 15,
+      "description": "Path to Zone 07"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_lav_f_2",
+      "weight": 20,
+      "description": "Path to Female LAV"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_lav_m_2",
+      "weight": 20,
+      "description": "Path to Male LAV"
+    },
+    {
+      "from": "hsitp_corridor_2",
+      "to": "hsitp_pantry_2",
+      "weight": 15,
+      "description": "Path to Common Pantry"
+    },
+    {
+      "from": "hsitp_lift_lobby_3",
+      "to": "hsitp_corridor_3",
+      "weight": 10,
+      "description": "Path from lift lobby to corridor"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_01_3",
+      "weight": 15,
+      "description": "Path to Zone 01"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_02_3",
+      "weight": 10,
+      "description": "Path to Zone 02"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_03_3",
+      "weight": 15,
+      "description": "Path to Zone 03"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_05_3",
+      "weight": 15,
+      "description": "Path to Zone 05"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_06_3",
+      "weight": 10,
+      "description": "Path to Zone 06"
+    },
+    {
+      "from": "hsitp_corridor_3",
+      "to": "hsitp_zone_07_3",
+      "weight": 15,
+      "description": "Path to Zone 07"
+    },
+    {
+      "from": "hsitp_lift_lobby_5",
+      "to": "hsitp_corridor_5",
+      "weight": 10,
+      "description": "Path from lift lobby to corridor"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_01_5",
+      "weight": 15,
+      "description": "Path to Zone 01"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_02_5",
+      "weight": 10,
+      "description": "Path to Zone 02"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_03_5",
+      "weight": 15,
+      "description": "Path to Zone 03"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_05_5",
+      "weight": 15,
+      "description": "Path to Zone 05"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_06_5",
+      "weight": 10,
+      "description": "Path to Zone 06"
+    },
+    {
+      "from": "hsitp_corridor_5",
+      "to": "hsitp_zone_07_5",
+      "weight": 15,
+      "description": "Path to Zone 07"
+    },
+    {
+      "from": "hsitp_lift_lobby_6",
+      "to": "hsitp_corridor_6",
+      "weight": 10,
+      "description": "Path from lift lobby to corridor"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_01_6",
+      "weight": 15,
+      "description": "Path to Zone 01"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_02_6",
+      "weight": 10,
+      "description": "Path to Zone 02"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_03_6",
+      "weight": 15,
+      "description": "Path to Zone 03"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_05_6",
+      "weight": 15,
+      "description": "Path to Zone 05"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_06_6",
+      "weight": 10,
+      "description": "Path to Zone 06"
+    },
+    {
+      "from": "hsitp_corridor_6",
+      "to": "hsitp_zone_07_6",
+      "weight": 15,
+      "description": "Path to Zone 07"
+    },
+    {
+      "from": "hsitp_lift_lobby_7",
+      "to": "hsitp_corridor_7",
+      "weight": 10,
+      "description": "Path from lift lobby to corridor"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_01_7",
+      "weight": 15,
+      "description": "Path to Zone 01"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_02_7",
+      "weight": 10,
+      "description": "Path to Zone 02"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_03_7",
+      "weight": 15,
+      "description": "Path to Zone 03"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_05_7",
+      "weight": 15,
+      "description": "Path to Zone 05"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_06_7",
+      "weight": 10,
+      "description": "Path to Zone 06"
+    },
+    {
+      "from": "hsitp_corridor_7",
+      "to": "hsitp_zone_07_7",
+      "weight": 15,
+      "description": "Path to Zone 07"
+    },
+    {
+      "from": "hsitp_corridor_1",
+      "to": "hsitp_ahu_1_bottom",
+      "weight": 86,
+      "description": "Path from hsitp_corridor_1 to hsitp_ahu_1_bottom",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_lift_lobby_1",
+      "to": "hsitp_pantry_1",
+      "weight": 25,
+      "description": "Path from hsitp_lift_lobby_1 to hsitp_pantry_1",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_lift_lobby_1",
+      "to": "hsitp_lav_m_1",
+      "weight": 10,
+      "description": "Path from hsitp_lift_lobby_1 to hsitp_lav_m_1",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_lift_lobby_1",
+      "to": "hsitp_lav_f_1",
+      "weight": 21,
+      "description": "Path from hsitp_lift_lobby_1 to hsitp_lav_f_1",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_ahu_1_top",
+      "to": "hsitp_lift_lobby_1",
+      "weight": 32,
+      "description": "Path from hsitp_ahu_1_top to hsitp_lift_lobby_1",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_zone_03",
+      "to": "hsitp_zone_01",
+      "weight": 65,
+      "description": "Path from hsitp_zone_03 to hsitp_zone_01"
+    },
+    {
+      "from": "hsitp_zone_01",
+      "to": "hsitp_lav_f_1",
+      "weight": 52,
+      "description": "Path from hsitp_zone_01 to hsitp_lav_f_1"
+    },
+    {
+      "from": "hsitp_ahu_1_top",
+      "to": "hsitp_corridor_1",
+      "weight": 34,
+      "description": "Path from hsitp_ahu_1_top to hsitp_corridor_1",
+      "hasWaypoints": true
+    },
+    {
+      "from": "hsitp_stairs_1",
+      "to": "hsitp_corridor_1",
+      "weight": 24,
+      "description": "Path from hsitp_stairs_1 to hsitp_corridor_1",
+      "hasWaypoints": true
+    }
   ]
 }

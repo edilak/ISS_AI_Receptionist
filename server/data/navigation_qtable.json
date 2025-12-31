@@ -1,0 +1,20 @@
+{
+  "qTables": [],
+  "rewardWeights": {
+    "distance": -0.1,
+    "time": -0.05,
+    "floorChanges": -2,
+    "turns": -0.3,
+    "accessibility": 1,
+    "landmarks": 0.5,
+    "congestion": -0.2
+  },
+  "explorationRate": 0.1,
+  "stats": {
+    "totalEpisodes": 0,
+    "avgReward": 0,
+    "avgPathLength": 0,
+    "explorationRate": 0.1,
+    "qTableSize": 0
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './CoordinateMapper.css';
 import { getImageClickCoordinates, validateCoordinates } from '../utils/coordinateTransform';
 
-const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
+const CoordinateMapper = ({ floorPlanImage, floorNumber: initialFloorNumber, onSave, onClose }) => {
   const [markers, setMarkers] = useState([]);
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -16,6 +16,12 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
   const dragStateRef = useRef({ isDragging: false, draggingId: null, offset: { x: 0, y: 0 } });
   const finalDragPositionRef = useRef({ x: 0, y: 0 });
   
+  // Floor selection state
+  const [currentFloor, setCurrentFloor] = useState(initialFloorNumber || 1);
+  const [availableFloors, setAvailableFloors] = useState([]);
+  const [floorPlanData, setFloorPlanData] = useState(null);
+  const [currentFloorImage, setCurrentFloorImage] = useState(null);
+  
   // Route editing state
   const [routes, setRoutes] = useState([]);
   const [routeMode, setRouteMode] = useState(false);
@@ -26,6 +32,12 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
   const [draggingWaypoint, setDraggingWaypoint] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
   const waypointDragStateRef = useRef({ isDragging: false, routeIndex: null, waypointIndex: null, offset: { x: 0, y: 0 } });
+  
+  // Anchor editing state
+  const [anchorMode, setAnchorMode] = useState(false);
+  const [selectedAnchorNodeId, setSelectedAnchorNodeId] = useState(null);
+  const [draggingAnchor, setDraggingAnchor] = useState(null);
+  const anchorDragStateRef = useRef({ isDragging: false, nodeId: null, anchorIndex: null, offset: { x: 0, y: 0 } });
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -45,7 +57,7 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [routeMode, routeWaypoints]);
 
-  // Load existing markers from API if floorPlanImage is not provided
+  // Load available floors and floor plan data
   useEffect(() => {
     const loadFloorPlanData = async () => {
       if (!floorPlanImage) {
@@ -53,25 +65,17 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
           const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
           const response = await fetch(`${API_BASE_URL}/pathfinder/floor-plans`);
           const data = await response.json();
-          const floorInfo = data.floors.find(f => f.floor === floorNumber);
-          if (floorInfo) {
-            if (floorInfo.nodes) {
-              setMarkers(floorInfo.nodes.map(node => ({
-                id: node.id || `marker_${Date.now()}_${Math.random()}`,
-                pixelX: node.pixelX,
-                pixelY: node.pixelY,
-                nodeId: node.id,
-                name: node.name || node.id
-              })));
-            }
-            if (floorInfo.paths && Array.isArray(floorInfo.paths)) {
-              setRoutes(floorInfo.paths);
-            }
-            setImageDimensions({
-              width: floorInfo.image?.naturalWidth || floorInfo.image?.width || 1200,
-              height: floorInfo.image?.naturalHeight || floorInfo.image?.height || 900
-            });
-          }
+          setFloorPlanData(data);
+          
+          // Extract available floors
+          const floors = data.floors.map(f => ({
+            floor: f.floor,
+            name: f.name || `Floor ${f.floor}`
+          })).sort((a, b) => a.floor - b.floor);
+          setAvailableFloors(floors);
+          
+          // Load current floor data
+          loadFloorData(data, currentFloor);
         } catch (error) {
           console.error('Error loading floor plan data:', error);
         }
@@ -87,7 +91,55 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
     };
     
     loadFloorPlanData();
-  }, [floorPlanImage, floorNumber]);
+  }, [floorPlanImage]);
+
+  // Load data for a specific floor
+  const loadFloorData = (data, floorNum) => {
+    if (!data) return;
+    
+    const floorInfo = data.floors.find(f => f.floor === floorNum);
+          if (floorInfo) {
+            if (floorInfo.nodes) {
+              setMarkers(floorInfo.nodes.map(node => ({
+                id: node.id || `marker_${Date.now()}_${Math.random()}`,
+                pixelX: node.pixelX,
+                pixelY: node.pixelY,
+                nodeId: node.id,
+          name: node.name || node.id,
+          anchors: node.anchors || [] // Load anchors if they exist
+              })));
+      } else {
+        setMarkers([]);
+            }
+      
+            if (floorInfo.paths && Array.isArray(floorInfo.paths)) {
+              setRoutes(floorInfo.paths);
+      } else {
+        setRoutes([]);
+            }
+      
+            setImageDimensions({
+              width: floorInfo.image?.naturalWidth || floorInfo.image?.width || 1200,
+              height: floorInfo.image?.naturalHeight || floorInfo.image?.height || 900
+            });
+      
+      if (floorInfo.image?.url) {
+        setCurrentFloorImage(floorInfo.image.url);
+        }
+    } else {
+      // Floor not found - clear data
+      setMarkers([]);
+      setRoutes([]);
+      setCurrentFloorImage(null);
+    }
+  };
+
+  // Reload floor data when current floor changes
+  useEffect(() => {
+    if (floorPlanData) {
+      loadFloorData(floorPlanData, currentFloor);
+    }
+  }, [currentFloor]);
 
   // Get image dimensions when loaded
   useEffect(() => {
@@ -150,6 +202,38 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
 
   const handleImageClick = (event) => {
     if (isDragging) return;
+
+    // If in anchor mode, add anchor to selected marker
+    if (anchorMode && selectedMarker) {
+      const imgElement = imageRef.current;
+      if (!imgElement) return;
+
+      const rect = imgElement.getBoundingClientRect();
+      const naturalWidth = imgElement.naturalWidth || imgElement.width;
+      const naturalHeight = imgElement.naturalHeight || imgElement.height;
+      const displayWidth = rect.width;
+      const displayHeight = rect.height;
+
+      if (naturalWidth === 0 || naturalHeight === 0 || displayWidth === 0 || displayHeight === 0) {
+        return;
+      }
+
+      const scaleX = naturalWidth / displayWidth;
+      const scaleY = naturalHeight / displayHeight;
+
+      const clickX = (event.clientX - rect.left) * scaleX;
+      const clickY = (event.clientY - rect.top) * scaleY;
+
+      const maxX = naturalWidth;
+      const maxY = naturalHeight;
+      
+      if (clickX >= 0 && clickX <= maxX && clickY >= 0 && clickY <= maxY) {
+        handleAddAnchor(selectedMarker.id, clickX, clickY);
+        // Exit anchor mode after adding
+        setAnchorMode(false);
+      }
+      return;
+    }
 
     // If in route mode, add waypoint
     if (routeMode && routeFrom) {
@@ -418,10 +502,80 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
 
 
   const handleDeleteMarker = (markerId) => {
-    setMarkers(markers.filter(m => m.id !== markerId));
+    console.log('🗑️ handleDeleteMarker called with markerId:', markerId);
+    console.log('Current markers:', markers);
+    
+    // Find the marker to get its nodeId
+    const markerToDelete = markers.find(m => m.id === markerId);
+    console.log('Marker to delete:', markerToDelete);
+    
+    if (!markerToDelete) {
+      console.error('Cannot delete marker: marker not found with id:', markerId);
+      alert(`Error: Marker with id "${markerId}" not found`);
+      return;
+    }
+    
+    const nodeIdToDelete = markerToDelete.nodeId || markerToDelete.id;
+    console.log('NodeId to delete:', nodeIdToDelete);
+    
+    if (!nodeIdToDelete) {
+      console.error('Cannot delete marker: nodeId not found');
+      alert('Error: Node ID not found for this marker');
+      return;
+    }
+    
+    // Delete the marker
+    setMarkers(prevMarkers => {
+      const updatedMarkers = prevMarkers.filter(m => m.id !== markerId);
+      console.log('Updated markers count:', updatedMarkers.length, '(was', prevMarkers.length, ')');
+      return updatedMarkers;
+    });
+    
+    // Delete all routes connected to this node (both from and to)
+    setRoutes(prevRoutes => {
+      const connectedRoutes = prevRoutes.filter(r => 
+        r.from === nodeIdToDelete || r.to === nodeIdToDelete
+      );
+      
+      if (connectedRoutes.length > 0) {
+        console.log(`🗑️ Deleting ${connectedRoutes.length} route(s) connected to node ${nodeIdToDelete}:`, connectedRoutes);
+        const updatedRoutes = prevRoutes.filter(r => 
+          r.from !== nodeIdToDelete && r.to !== nodeIdToDelete
+        );
+        console.log('Updated routes count:', updatedRoutes.length, '(was', prevRoutes.length, ')');
+        return updatedRoutes;
+      } else {
+        console.log('No routes connected to node', nodeIdToDelete);
+        return prevRoutes;
+      }
+    });
+    
+    // Clear selection if this marker was selected
     if (selectedMarker?.id === markerId) {
+      console.log('Clearing selected marker');
       setSelectedMarker(null);
     }
+    
+    // Clear route creation if this node was the routeFrom
+    if (routeFrom === nodeIdToDelete) {
+      console.log('Clearing route creation (node was routeFrom)');
+      setRouteFrom(null);
+      setRouteWaypoints([]);
+      if (routeMode) {
+        setRouteMode(false);
+      }
+    }
+    
+    // Clear editing if the route being edited involves this node
+    if (editingRoute && (editingRoute.from === nodeIdToDelete || editingRoute.to === nodeIdToDelete)) {
+      console.log('Clearing route editing (route involves deleted node)');
+      setEditingRoute(null);
+      setRouteMode(false);
+      setRouteFrom(null);
+      setRouteWaypoints([]);
+    }
+    
+    console.log('✅ Marker deletion completed');
   };
 
   const handleUpdateNodeId = (markerId, newNodeId) => {
@@ -571,14 +725,165 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
     );
   };
 
+  // Anchor management functions
+  const handleAddAnchor = (markerId, pixelX, pixelY) => {
+    setMarkers(prevMarkers =>
+      prevMarkers.map(m => {
+        if (m.id === markerId) {
+          const newAnchors = [...(m.anchors || [])];
+          const anchorId = `anchor_${newAnchors.length + 1}`;
+          newAnchors.push({
+            id: anchorId,
+            pixelX: pixelX,
+            pixelY: pixelY,
+            direction: 'auto',
+            connectsTo: []
+          });
+          return { ...m, anchors: newAnchors };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleDeleteAnchor = (markerId, anchorIndex) => {
+    setMarkers(prevMarkers =>
+      prevMarkers.map(m => {
+        if (m.id === markerId && m.anchors) {
+          const newAnchors = m.anchors.filter((_, idx) => idx !== anchorIndex);
+          return { ...m, anchors: newAnchors };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleUpdateAnchorConnectsTo = (markerId, anchorIndex, connectsTo) => {
+    setMarkers(prevMarkers =>
+      prevMarkers.map(m => {
+        if (m.id === markerId && m.anchors) {
+          const newAnchors = [...m.anchors];
+          newAnchors[anchorIndex] = { ...newAnchors[anchorIndex], connectsTo };
+          return { ...m, anchors: newAnchors };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleAnchorDrag = useCallback((event) => {
+    const dragState = anchorDragStateRef.current;
+    if (!dragState.isDragging || !dragState.nodeId || dragState.anchorIndex === null) return;
+
+    if (dragUpdateRef.current) {
+      cancelAnimationFrame(dragUpdateRef.current);
+    }
+
+    dragUpdateRef.current = requestAnimationFrame(() => {
+      const imgElement = imageRef.current;
+      if (!imgElement) return;
+
+      const imgRect = imgElement.getBoundingClientRect();
+      const naturalWidth = imgElement.naturalWidth || imgElement.width;
+      const naturalHeight = imgElement.naturalHeight || imgElement.height;
+      const displayWidth = imgRect.width;
+      const displayHeight = imgRect.height;
+
+      const scaleX = naturalWidth / displayWidth;
+      const scaleY = naturalHeight / displayHeight;
+
+      const clickX = (event.clientX - imgRect.left) * scaleX;
+      const clickY = (event.clientY - imgRect.top) * scaleY;
+
+      const newX = clickX - dragState.offset.x;
+      const newY = clickY - dragState.offset.y;
+
+      const maxX = naturalWidth;
+      const maxY = naturalHeight;
+      
+      if (newX >= -1 && newX <= maxX + 1 && newY >= -1 && newY <= maxY + 1) {
+        const clampedX = Math.max(0, Math.min(newX, maxX));
+        const clampedY = Math.max(0, Math.min(newY, maxY));
+        
+        setMarkers(prevMarkers =>
+          prevMarkers.map(m => {
+            if (m.id === dragState.nodeId && m.anchors) {
+              const newAnchors = [...m.anchors];
+              newAnchors[dragState.anchorIndex] = {
+                ...newAnchors[dragState.anchorIndex],
+                pixelX: clampedX,
+                pixelY: clampedY
+              };
+              return { ...m, anchors: newAnchors };
+            }
+            return m;
+          })
+        );
+      }
+    });
+  }, []);
+
+  const handleAnchorDragEnd = useCallback(() => {
+    if (dragUpdateRef.current) {
+      cancelAnimationFrame(dragUpdateRef.current);
+      dragUpdateRef.current = null;
+    }
+    
+    document.removeEventListener('mousemove', handleAnchorDrag);
+    document.removeEventListener('mouseup', handleAnchorDragEnd);
+    
+    anchorDragStateRef.current = { isDragging: false, nodeId: null, anchorIndex: null, offset: { x: 0, y: 0 } };
+    setDraggingAnchor(null);
+  }, [handleAnchorDrag]);
+
+  const handleAnchorDragStart = (marker, anchorIndex, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    const imgElement = imageRef.current;
+    if (!imgElement) return;
+
+    const anchor = marker.anchors[anchorIndex];
+
+    const rect = imgElement.getBoundingClientRect();
+    const naturalWidth = imgElement.naturalWidth || imgElement.width;
+    const naturalHeight = imgElement.naturalHeight || imgElement.height;
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+
+    const scaleX = naturalWidth / displayWidth;
+    const scaleY = naturalHeight / displayHeight;
+
+    const clickX = (event.clientX - rect.left) * scaleX;
+    const clickY = (event.clientY - rect.top) * scaleY;
+
+    const offset = {
+      x: clickX - anchor.pixelX,
+      y: clickY - anchor.pixelY
+    };
+    
+    anchorDragStateRef.current = {
+      isDragging: true,
+      nodeId: marker.id,
+      anchorIndex: anchorIndex,
+      offset: offset
+    };
+    
+    setDraggingAnchor({ nodeId: marker.id, anchorIndex });
+    
+    document.addEventListener('mousemove', handleAnchorDrag);
+    document.addEventListener('mouseup', handleAnchorDragEnd);
+  };
+
   const handleExport = () => {
     const exportData = {
-      floor: floorNumber,
+      floor: currentFloor,
       nodes: markers.map(m => ({
         id: m.nodeId,
         pixelX: m.pixelX,
         pixelY: m.pixelY,
-        name: m.name
+        name: m.name,
+        anchors: m.anchors || [] // Include anchors in export
       })),
       paths: routes
     };
@@ -595,12 +900,13 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
   const handleSave = async () => {
     try {
       const saveData = {
-        floor: floorNumber,
+        floor: currentFloor,
         nodes: markers.map(m => ({
           id: m.nodeId,
           pixelX: m.pixelX,
           pixelY: m.pixelY,
-          name: m.name
+          name: m.name,
+          anchors: m.anchors || [] // Include anchors in save
         })),
         paths: routes
       };
@@ -626,7 +932,17 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
         if (response.ok) {
           const nodesMsg = `${result.nodesUpdated || markers.length} node(s)`;
           const routesMsg = result.routesUpdated !== undefined ? ` and ${result.routesUpdated} route(s)` : (routes.length > 0 ? ` and ${routes.length} route(s)` : '');
-          alert(`✅ Successfully saved ${nodesMsg}${routesMsg} for floor ${floorNumber}!`);
+          alert(`✅ Successfully saved ${nodesMsg}${routesMsg} for floor ${currentFloor}!`);
+          
+          // Reload floor data to get updated data from server
+          try {
+            const reloadResponse = await fetch(`${API_BASE_URL}/pathfinder/floor-plans`);
+            const reloadData = await reloadResponse.json();
+            setFloorPlanData(reloadData);
+            loadFloorData(reloadData, currentFloor);
+          } catch (reloadError) {
+            console.warn('Could not reload floor data after save:', reloadError);
+          }
         } else {
           console.error('Save failed:', result);
           alert(`❌ Failed to save: ${result.error || 'Unknown error'}. Use "Export JSON" to copy the data manually.`);
@@ -681,8 +997,30 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
   return (
     <div className="coordinate-mapper">
       <div className="mapper-header">
-        <h2>Coordinate Mapper - Floor {floorNumber}</h2>
+        <h2>Coordinate Mapper</h2>
         <div className="mapper-actions">
+          {availableFloors.length > 0 && (
+            <select
+              value={currentFloor}
+              onChange={(e) => setCurrentFloor(parseInt(e.target.value))}
+              style={{
+                padding: '8px 12px',
+                marginRight: '10px',
+                borderRadius: '5px',
+                border: '1px solid #444',
+                background: '#2a2a2a',
+                color: '#fff',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              {availableFloors.map(floor => (
+                <option key={floor.floor} value={floor.floor}>
+                  {floor.name}
+                </option>
+              ))}
+            </select>
+          )}
           <button onClick={handleExport} className="btn-export">Export JSON</button>
           <button onClick={handleSave} className="btn-save">Save</button>
           <button onClick={onClose} className="btn-close">Close</button>
@@ -860,6 +1198,109 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
               </div>
             )}
           </div>
+
+          {/* Anchor Editing Controls */}
+          <div className="anchor-controls" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #444' }}>
+            <h4 style={{ marginTop: 0, color: '#fff' }}>Anchor Points (Door/Exit)</h4>
+            <p style={{ fontSize: '11px', color: '#aaa', marginBottom: '10px' }}>
+              Anchors define where paths connect to zones (doors/exits).
+            </p>
+            
+            {!anchorMode ? (
+              <button
+                onClick={() => {
+                  setAnchorMode(true);
+                  setSelectedAnchorNodeId(selectedMarker?.id || null);
+                }}
+                disabled={!selectedMarker}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: selectedMarker ? '#9c27b0' : '#555',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: selectedMarker ? 'pointer' : 'not-allowed',
+                  fontWeight: '600',
+                  marginBottom: '10px'
+                }}
+              >
+                🎯 Add Anchor to {selectedMarker?.nodeId || 'Selected Node'}
+              </button>
+            ) : (
+              <div>
+                <div style={{ marginBottom: '10px', fontSize: '12px', color: '#fff', background: 'rgba(156, 39, 176, 0.2)', padding: '10px', borderRadius: '4px' }}>
+                  <strong>Anchor Mode Active</strong>
+                  <div style={{ fontSize: '11px', marginTop: '5px', opacity: 0.8 }}>
+                    Click on the image near "{selectedMarker?.nodeId}" to place an anchor point (door/exit location)
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setAnchorMode(false);
+                    setSelectedAnchorNodeId(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    background: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  Cancel Anchor Mode
+                </button>
+              </div>
+            )}
+
+            {/* Show anchors for selected marker */}
+            {selectedMarker && selectedMarker.anchors && selectedMarker.anchors.length > 0 && (
+              <div style={{ marginTop: '10px' }}>
+                <strong style={{ color: '#fff', fontSize: '12px' }}>
+                  Anchors for {selectedMarker.nodeId} ({selectedMarker.anchors.length}):
+                </strong>
+                <div style={{ maxHeight: '120px', overflowY: 'auto', marginTop: '5px' }}>
+                  {selectedMarker.anchors.map((anchor, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '5px',
+                        margin: '2px 0',
+                        background: '#1a1a1a',
+                        borderRadius: '3px',
+                        fontSize: '10px',
+                        color: '#fff',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <span>
+                        🎯 {anchor.id} ({Math.round(anchor.pixelX)}, {Math.round(anchor.pixelY)})
+                      </span>
+                      <button
+                        onClick={() => handleDeleteAnchor(selectedMarker.id, idx)}
+                        style={{
+                          background: '#f44336',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          padding: '2px 6px',
+                          cursor: 'pointer',
+                          fontSize: '9px'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mapper-canvas-container">
@@ -871,8 +1312,8 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
             style={{ userSelect: 'none' }}
           >
             {(() => {
-              // Get image URL from floorPlanImage prop or load from API
-              const imageUrl = floorPlanImage?.image?.url || `/images/hsipt_floorplan_lb03_8.webp`;
+              // Get image URL from current floor or fallback
+              const imageUrl = currentFloorImage || floorPlanImage?.image?.url || `/images/hsipt_floorplan_lb03_8.webp`;
               return (
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <img
@@ -1031,6 +1472,90 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
                         })()}
                       </>
                     )}
+
+                    {/* Render anchors for all markers */}
+                    {markers.map(marker => {
+                      if (!marker.anchors || marker.anchors.length === 0) return null;
+                      const isMarkerSelected = selectedMarker?.id === marker.id;
+                      
+                      return marker.anchors.map((anchor, anchorIdx) => {
+                        const isDraggingThisAnchor = 
+                          draggingAnchor?.nodeId === marker.id && 
+                          draggingAnchor?.anchorIndex === anchorIdx;
+                        
+                        return (
+                          <g key={`anchor-${marker.id}-${anchorIdx}`}>
+                            {/* Line from marker center to anchor */}
+                            <line
+                              x1={marker.pixelX}
+                              y1={marker.pixelY}
+                              x2={anchor.pixelX}
+                              y2={anchor.pixelY}
+                              stroke={isMarkerSelected ? "#9c27b0" : "#666"}
+                              strokeWidth={isMarkerSelected ? 2 : 1}
+                              strokeDasharray="3,3"
+                              opacity={isMarkerSelected ? 0.8 : 0.4}
+                            />
+                            {/* Anchor point (diamond shape) */}
+                            <polygon
+                              points={`${anchor.pixelX},${anchor.pixelY - 8} ${anchor.pixelX + 8},${anchor.pixelY} ${anchor.pixelX},${anchor.pixelY + 8} ${anchor.pixelX - 8},${anchor.pixelY}`}
+                              fill={isMarkerSelected ? "#9c27b0" : "#666"}
+                              stroke="white"
+                              strokeWidth={2}
+                              style={{ 
+                                cursor: isMarkerSelected ? 'move' : 'pointer', 
+                                pointerEvents: 'auto',
+                                transition: isDraggingThisAnchor ? 'none' : 'all 0.1s ease-out'
+                              }}
+                              onMouseDown={(e) => {
+                                if (isMarkerSelected) {
+                                  handleAnchorDragStart(marker, anchorIdx, e);
+                                }
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedMarker(marker);
+                              }}
+                            />
+                            {/* Anchor label */}
+                            {isMarkerSelected && (
+                              <text
+                                x={anchor.pixelX + 12}
+                                y={anchor.pixelY + 4}
+                                fill="#9c27b0"
+                                fontSize="10"
+                                fontWeight="bold"
+                              >
+                                {anchor.id}
+                              </text>
+                            )}
+                          </g>
+                        );
+                      });
+                    })}
+
+                    {/* Preview anchor placement in anchor mode */}
+                    {anchorMode && selectedMarker && mousePosition && (
+                      <g>
+                        <line
+                          x1={selectedMarker.pixelX}
+                          y1={selectedMarker.pixelY}
+                          x2={mousePosition.x}
+                          y2={mousePosition.y}
+                          stroke="#9c27b0"
+                          strokeWidth={2}
+                          strokeDasharray="5,5"
+                          opacity={0.6}
+                        />
+                        <polygon
+                          points={`${mousePosition.x},${mousePosition.y - 8} ${mousePosition.x + 8},${mousePosition.y} ${mousePosition.x},${mousePosition.y + 8} ${mousePosition.x - 8},${mousePosition.y}`}
+                          fill="#9c27b0"
+                          stroke="white"
+                          strokeWidth={2}
+                          opacity={0.6}
+                        />
+                      </g>
+                    )}
                   </svg>
                   
                   {/* Render markers - positioned relative to the image wrapper */}
@@ -1077,10 +1602,35 @@ const CoordinateMapper = ({ floorPlanImage, floorNumber, onSave, onClose }) => {
                       />
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          handleDeleteMarker(marker.id);
+                          console.log('Delete button clicked for marker:', marker);
+                          
+                          const nodeId = marker.nodeId || marker.id;
+                          const connectedRoutes = routes.filter(r => 
+                            r.from === nodeId || r.to === nodeId
+                          );
+                          
+                          console.log('Connected routes:', connectedRoutes);
+                          
+                          let shouldDelete = false;
+                          
+                          if (connectedRoutes.length > 0) {
+                            const confirmMessage = `Delete node "${nodeId}"?\n\nThis will also delete ${connectedRoutes.length} connected route(s):\n${connectedRoutes.map(r => `  • ${r.from} → ${r.to}`).join('\n')}\n\nAre you sure?`;
+                            shouldDelete = window.confirm(confirmMessage);
+                          } else {
+                            shouldDelete = window.confirm(`Delete node "${nodeId}"?`);
+                          }
+                          
+                          if (shouldDelete) {
+                            console.log('User confirmed deletion, calling handleDeleteMarker');
+                            handleDeleteMarker(marker.id);
+                          } else {
+                            console.log('User cancelled deletion');
+                          }
                         }}
                         className="btn-delete-marker"
+                        type="button"
                       >
                         Delete
                       </button>

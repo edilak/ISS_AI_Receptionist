@@ -29,28 +29,73 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
     }
   };
 
+  const suggestedQuestions = language === 'en' 
+    ? [
+        'How do I get to Zone 5?',
+        'Where is the lift lobby?',
+        'Find the nearest restroom'
+      ]
+    : language === 'zh-HK'
+    ? [
+        '點樣去5區？',
+        '升降機大堂喺邊？',
+        '最近嘅洗手間喺邊？'
+      ]
+    : [
+        '怎么去5区？',
+        '电梯大厅在哪？',
+        '最近的洗手间在哪？'
+      ];
+
   return (
     <div className="chat-interface">
+      {/* Chat Header */}
+      <div className="chat-header">
+        <div className="chat-header-info">
+          <h3 className="chat-title">
+            {language === 'en' ? 'Chat with Tracy' : language === 'zh-HK' ? '與 Tracy 對話' : '与 Tracy 对话'}
+          </h3>
+          <p className="chat-subtitle">
+            {language === 'en' 
+              ? 'Ask me anything about the building' 
+              : language === 'zh-HK' 
+              ? '詢問有關大樓的任何問題' 
+              : '询问有关大楼的任何问题'}
+          </p>
+        </div>
+        <div className="chat-status">
+          <span className="chat-status-dot"></span>
+          <span className="chat-status-text">
+            {language === 'en' ? 'Active' : language === 'zh-HK' ? '在線' : '在线'}
+          </span>
+        </div>
+      </div>
+
+      {/* Messages Area */}
       <div className="chat-messages">
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={`message ${message.sender} ${message.isError ? 'error' : ''}`}
+            style={{ animationDelay: `${index * 0.05}s` }}
           >
+            {message.sender === 'assistant' && (
+              <div className="message-avatar">
+                <div className="avatar-mini">
+                  <div className="avatar-mini-eye"></div>
+                  <div className="avatar-mini-eye"></div>
+                </div>
+              </div>
+            )}
+            <div className="message-content">
             <div className="message-bubble">
               <p>{message.text}</p>
               {message.locationImage && (
-                <div className="location-image-container" style={{ marginTop: '12px', marginBottom: '8px' }}>
+                  <div className="location-image-container">
                   <img 
                     src={message.locationImage} 
                     alt="Location" 
-                    style={{ 
-                      maxWidth: '100%', 
-                      maxHeight: '300px', 
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      display: 'block'
-                    }}
+                      className="location-image"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -59,29 +104,45 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
               )}
               {message.isPathQuery && (
                 <div className="path-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    <span>
                   {language === 'en' 
-                    ? '📍 Path visualization will be shown below'
+                        ? 'Route map loading below...'
                     : language === 'zh-HK'
-                    ? '📍 路徑視覺化將在下方顯示'
-                    : '📍 路径可视化将在下方显示'}
+                        ? '路線圖正在下方加載...'
+                        : '路线图正在下方加载...'}
+                    </span>
                 </div>
               )}
             </div>
-            <div className="message-time">
+              <span className="message-time">
               {message.timestamp.toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit'
               })}
+              </span>
             </div>
           </div>
         ))}
+        
         {isLoading && (
           <div className="message assistant">
+            <div className="message-avatar">
+              <div className="avatar-mini typing">
+                <div className="avatar-mini-eye"></div>
+                <div className="avatar-mini-eye"></div>
+              </div>
+            </div>
+            <div className="message-content">
             <div className="message-bubble">
               <div className="typing-indicator">
                 <span></span>
                 <span></span>
                 <span></span>
+                </div>
               </div>
             </div>
           </div>
@@ -89,7 +150,30 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Suggested Questions */}
+      {messages.length <= 2 && (
+        <div className="suggested-questions">
+          <span className="suggested-label">
+            {language === 'en' ? 'Try asking:' : language === 'zh-HK' ? '試試問：' : '试试问：'}
+          </span>
+          <div className="suggested-buttons">
+            {suggestedQuestions.map((question, index) => (
+              <button
+                key={index}
+                className="suggested-btn"
+                onClick={() => onSendMessage(question)}
+                disabled={isLoading}
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
       <form className="chat-input-form" onSubmit={handleSubmit}>
+        <div className="chat-input-wrapper">
         <div className="chat-input-container">
           <input
             ref={inputRef}
@@ -97,10 +181,10 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
             className="chat-input"
             placeholder={
               language === 'en'
-                ? 'Type your message or ask for directions...'
+                  ? 'Type your question here...'
                 : language === 'zh-HK'
-                ? '輸入您的訊息或詢問路線...'
-                : '输入您的消息或询问路线...'
+                  ? '在此輸入您的問題...'
+                  : '在此输入您的问题...'
             }
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -111,36 +195,30 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
             type="submit"
             className="send-button"
             disabled={!inputText.trim() || isLoading}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Send message"
             >
-              <path
-                d="M22 2L11 13"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M22 2L15 22L11 13L2 9L22 2Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </button>
         </div>
-        <div className="speak-here-indicator">
-          <span className="speak-here-text">
-            {language === 'en' ? 'SPEAK HERE' : language === 'zh-HK' ? '在此對話' : '在此对话'}
+          
+          {/* Voice Input Hint */}
+          <div className="voice-input-hint">
+            <div className="microphone-pulse">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+              </svg>
+            </div>
+            <span className="voice-hint-text">
+              {language === 'en' 
+                ? 'Or speak to me' 
+                : language === 'zh-HK' 
+                ? '或與我對話' 
+                : '或与我对话'}
           </span>
-          <div className="microphone-icon">🎤</div>
+          </div>
         </div>
       </form>
     </div>
@@ -148,4 +226,3 @@ const ChatInterface = ({ messages, onSendMessage, isLoading, language }) => {
 };
 
 export default ChatInterface;
-

@@ -6,6 +6,8 @@ require('dotenv').config();
 
 const chatRoutes = require('./routes/chat');
 const pathFinderRoutes = require('./routes/pathFinder');
+const analyticsRoutes = require('./routes/analytics');
+const spaceNavRoutes = require('./routes/spaceNav');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +20,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/pathfinder', pathFinderRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/space-nav', spaceNavRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

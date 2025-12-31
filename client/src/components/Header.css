@@ -1,72 +1,233 @@
-.app-header {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  color: white;
-  padding: 15px 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* ISS Kiosk Header Styles - Navy Blue Theme */
+
+.kiosk-header {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 10;
 }
 
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
+.header-container {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
+  padding: var(--space-md) var(--space-xl);
+  max-width: 1800px;
+  margin: 0 auto;
 }
 
-.location-info {
-  display: flex;
+/* Location Badge */
+.header-location {
+  flex: 1;
+}
+
+.location-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 600;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
 }
 
 .location-icon {
-  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  color: var(--iss-navy);
+  flex-shrink: 0;
 }
 
-.location-text {
-  font-family: 'Arial', sans-serif;
+.location-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.header-right {
+.location-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.location-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Welcome Message */
+.header-welcome {
+  flex: 2;
+  text-align: center;
+}
+
+.welcome-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--iss-navy);
+  margin-bottom: 2px;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Date & Time */
+.header-datetime {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: flex-end;
+  gap: var(--space-lg);
 }
 
-.weather-icons {
+.datetime-display {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.time-text {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--iss-navy);
+  letter-spacing: -0.02em;
+}
+
+.date-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Weather Indicator */
+.weather-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-radius: var(--radius-md);
+}
+
+.weather-temp {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .weather-icon {
-  font-size: 20px;
-  cursor: pointer;
-  transition: transform 0.2s;
+  width: 20px;
+  height: 20px;
+  color: #F59E0B;
 }
 
-.weather-icon:hover {
-  transform: scale(1.2);
+/* Navy Accent Bar */
+.header-accent {
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--iss-navy) 0%, 
+    var(--iss-blue-accent) 25%, 
+    var(--iss-navy) 50%,
+    var(--iss-blue-accent) 75%,
+    var(--iss-navy) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerAccent 3s linear infinite;
 }
 
-.time-display {
-  font-size: 16px;
-  font-weight: 500;
-  font-family: 'Arial', sans-serif;
+@keyframes shimmerAccent {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .header-container {
+    padding: var(--space-md) var(--space-lg);
+}
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .time-text {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .header-welcome {
+    display: none;
+  }
+
+  .header-location,
+  .header-datetime {
+    flex: 1;
+  }
 }
 
 @media (max-width: 768px) {
-  .app-header {
-    padding: 12px 20px;
+  .header-container {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .location-badge {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .location-icon {
+    width: 20px;
+    height: 20px;
   }
   
-  .location-info {
-    font-size: 16px;
+  .location-name {
+    font-size: 0.875rem;
+  }
+
+  .time-text {
+    font-size: 1rem;
   }
   
-  .time-display {
-    font-size: 14px;
+  .date-text {
+    font-size: 0.625rem;
+  }
+
+  .weather-indicator {
+    display: none;
   }
 }
 
+/* Kiosk Full Screen Mode */
+@media (min-width: 1920px) {
+  .header-container {
+    padding: var(--space-lg) var(--space-2xl);
+  }
+
+  .welcome-title {
+    font-size: 2rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+
+  .time-text {
+    font-size: 1.75rem;
+  }
+
+  .location-name {
+    font-size: 1.125rem;
+  }
+}

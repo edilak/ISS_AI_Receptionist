@@ -1,26 +1,19 @@
+/* ISS PathMap - Navy Blue Theme */
+
 .path-map-container {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--surface-border-light);
   overflow: hidden;
-  animation: slideUp 0.3s ease-out;
+  animation: fadeInUp 0.4s ease-out;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Path Map Header */
 .path-map-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
+  background: linear-gradient(135deg, var(--iss-navy) 0%, var(--iss-navy-light) 100%);
+  color: var(--text-inverse);
+  padding: var(--space-lg) var(--space-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -29,74 +22,130 @@
 .path-map-title {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .path-map-title h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-inverse);
 }
 
 .path-time {
-  font-size: 16px;
+  font-size: 1rem;
   opacity: 0.9;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
-.close-button {
+.path-time::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--iss-blue-light);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Floor Selector */
+.floor-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(10px);
+}
+
+.floor-selector label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-inverse);
+  white-space: nowrap;
+}
+
+.floor-selector select {
   background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-inverse);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.floor-selector select:focus {
+  border-color: var(--text-inverse);
+}
+
+.floor-selector select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Close Button */
+.close-button {
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  color: white;
-  width: 40px;
-  height: 40px;
+  color: var(--text-inverse);
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all var(--transition-fast);
+  font-size: 1.25rem;
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
 }
 
+/* Path Map Content */
 .path-map-content {
-  padding: 20px;
-  max-height: 600px;
+  padding: var(--space-lg);
+  max-height: 700px;
   overflow-y: auto;
+  background: var(--bg-secondary);
 }
 
 .path-map-content::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .path-map-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: transparent;
 }
 
 .path-map-content::-webkit-scrollbar-thumb {
-  background: #667eea;
-  border-radius: 10px;
+  background: var(--surface-border);
+  border-radius: 3px;
 }
 
-.path-map-content::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
-}
-
+/* Route Info Header */
 .path-route-info {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-lg);
 }
 
 .route-header {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--surface-border-light);
 }
 
 .route-from,
@@ -104,54 +153,59 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .route-label {
-  font-size: 12px;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .route-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .route-arrow {
-  font-size: 24px;
-  color: #667eea;
+  font-size: 1.5rem;
+  color: var(--iss-blue-accent);
   font-weight: bold;
+  flex-shrink: 0;
 }
 
+/* Path Visualization */
 .path-visualization {
-  margin: 20px 0;
-  padding: 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 10px;
-  min-height: 400px;
+  margin: var(--space-lg) 0;
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  min-height: 350px;
   position: relative;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--surface-border-light);
 }
 
 .floor-plan-container {
   position: relative;
   width: 100%;
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #e0e0e0;
-  transition: box-shadow 0.3s ease;
+  border: 2px solid var(--surface-border);
+  transition: box-shadow var(--transition-normal);
 }
 
 .floor-plan-container:hover {
-  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 30px rgba(74, 144, 217, 0.15);
 }
 
 .floor-plan-image {
@@ -161,6 +215,7 @@
   max-width: 100%;
 }
 
+/* Path Overlay */
 .path-overlay {
   position: absolute;
   top: 0;
@@ -174,16 +229,55 @@
 .path-line {
   opacity: 0;
   animation: pathFadeIn 0.8s ease-out forwards;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgba(13, 27, 62, 0.3));
+}
+
+.path-line-animated {
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  animation: pathDraw 2s ease-in-out forwards;
+}
+
+@keyframes pathDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes pathFadeIn {
   from {
     opacity: 0;
-    stroke-width: 2;
+    stroke-width: 3;
   }
   to {
     opacity: 1;
     stroke-width: 6;
+  }
+}
+
+/* Smooth path glow effect */
+.path-glow {
+  filter: blur(4px);
+  opacity: 0.4;
+}
+
+/* Direction arrows along path */
+.path-arrow {
+  fill: var(--iss-navy, #0D1B3E);
+  opacity: 0;
+  animation: arrowFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes arrowFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 0.8;
+    transform: scale(1);
   }
 }
 
@@ -210,143 +304,225 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.1);
-  }
-}
-
-.tooltip-bg {
-  animation: tooltipFadeIn 0.2s ease-out;
-}
-
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Simple Path Steps */
 .simple-path-map {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .path-step {
   display: flex;
   align-items: flex-start;
-  gap: 15px;
+  gap: var(--space-md);
   position: relative;
 }
 
 .step-marker {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--bg-card);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   flex-shrink: 0;
+  border: 2px solid var(--surface-border-light);
 }
 
 .marker-icon {
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .step-info {
   flex: 1;
-  padding: 10px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--surface-border-light);
 }
 
 .step-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 5px;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .step-direction {
-  font-size: 14px;
-  color: #667eea;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--iss-blue-accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
 .floor-change {
-  font-size: 12px;
-  color: #999;
-  margin-top: 5px;
-  font-style: italic;
+  font-size: 0.8125rem;
+  color: var(--iss-navy);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-weight: 500;
 }
 
 .step-connector {
   position: absolute;
-  left: 20px;
-  top: 50px;
+  left: 23px;
+  top: 52px;
   width: 2px;
-  height: 30px;
-  background: #667eea;
+  height: 24px;
 }
 
 .connector-line {
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, #667eea, rgba(102, 126, 234, 0.3));
+  background: linear-gradient(to bottom, var(--iss-blue-accent), rgba(74, 144, 217, 0.3));
+  border-radius: 1px;
 }
 
+/* Path Instructions */
 .path-instructions {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--surface-border-light);
 }
 
 .path-instructions h4 {
-  margin: 0 0 15px 0;
-  font-size: 18px;
-  color: #333;
+  margin: 0 0 var(--space-md) 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.path-instructions h4::before {
+  content: '📋';
 }
 
 .instructions-list {
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--space-xl);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .instructions-list li {
-  padding: 8px 0;
-  color: #555;
+  padding: var(--space-sm) 0;
+  color: var(--text-secondary);
   line-height: 1.6;
+  font-size: 0.9375rem;
 }
 
+.instructions-list li::marker {
+  color: var(--iss-blue-accent);
+  font-weight: bold;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
+  .path-map-header {
+    padding: var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .path-map-title h3 {
+    font-size: 1rem;
+  }
+
+  .path-time {
+    font-size: 0.875rem;
+  }
+
   .path-map-content {
-    padding: 15px;
+    padding: var(--space-md);
+    max-height: 500px;
   }
   
   .route-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--space-sm);
   }
   
   .route-arrow {
+    align-self: center;
     transform: rotate(90deg);
+  }
+
+  .path-visualization {
+    padding: var(--space-md);
+    min-height: 250px;
+  }
+
+  .step-marker {
+    width: 40px;
+    height: 40px;
+  }
+
+  .marker-icon {
+    font-size: 1rem;
+  }
+
+  .step-name {
+    font-size: 0.9375rem;
+  }
+
+  .step-direction {
+    font-size: 0.8125rem;
   }
 }
 
+/* Kiosk Full Screen Mode */
+@media (min-width: 1920px) {
+  .path-map-header {
+    padding: var(--space-xl);
+  }
+
+  .path-map-title h3 {
+    font-size: 1.5rem;
+  }
+
+  .path-time {
+    font-size: 1.125rem;
+  }
+
+  .path-map-content {
+    padding: var(--space-xl);
+    max-height: 800px;
+  }
+
+  .route-name {
+    font-size: 1.375rem;
+  }
+
+  .step-marker {
+    width: 56px;
+    height: 56px;
+  }
+
+  .marker-icon {
+    font-size: 1.5rem;
+  }
+
+  .step-name {
+    font-size: 1.25rem;
+  }
+
+  .step-direction {
+    font-size: 1.0625rem;
+  }
+}

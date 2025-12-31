@@ -39,61 +39,69 @@
       "nodes": [
         {
           "id": "hsitp_main_entrance",
-          "pixelX": 140,
-          "pixelY": 820,
-          "realX": 0,
-          "realY": 0,
-          "marker": "entrance"
+          "pixelX": 2361.993987329523,
+          "pixelY": 1378.0573633069532,
+          "realX": 196.83283227746026,
+          "realY": 114.83811360891276,
+          "marker": "entrance",
+          "name": "hsitp_main_entrance"
         },
         {
           "id": "hsitp_reception",
-          "pixelX": 320,
-          "pixelY": 680,
-          "realX": 15,
-          "realY": 0,
-          "marker": "reception"
+          "pixelX": 2132.4098421996573,
+          "pixelY": 952.3729516323846,
+          "realX": 177.70082018330478,
+          "realY": 79.36441263603204,
+          "marker": "reception",
+          "name": "hsitp_reception"
         },
         {
           "id": "hsitp_lobby",
-          "pixelX": 540,
-          "pixelY": 520,
-          "realX": 30,
-          "realY": 0,
-          "marker": "lobby"
+          "pixelX": 2137.3781660064774,
+          "pixelY": 1267.489679291882,
+          "realX": 178.11484716720645,
+          "realY": 105.62413994099018,
+          "marker": "lobby",
+          "name": "hsitp_lobby"
         },
         {
           "id": "hsitp_lift_lobby",
-          "pixelX": 1075,
-          "pixelY": 360,
-          "realX": 45,
-          "realY": 0,
-          "marker": "elevator"
+          "pixelX": 2283.2732281331046,
+          "pixelY": 822.829226082097,
+          "realX": 190.27276901109204,
+          "realY": 68.56910217350809,
+          "marker": "elevator",
+          "name": "hsitp_lift_lobby"
         },
         {
           "id": "hsitp_stairs_main",
-          "pixelX": 1075,
-          "pixelY": 460,
-          "realX": 50,
-          "realY": 0,
-          "marker": "stairs"
+          "pixelX": 2307.8482768408962,
+          "pixelY": 1084.6146635178745,
+          "realX": 192.32068973674134,
+          "realY": 90.38455529315621,
+          "marker": "stairs",
+          "name": "hsitp_stairs_main"
         },
         {
           "id": "hsitp_restroom_gf_m",
-          "pixelX": 1125,
-          "pixelY": 330,
-          "realX": 70,
-          "realY": 0,
-          "marker": "facility"
+          "pixelX": 2290.2668928944686,
+          "pixelY": 606.4687854915181,
+          "realX": 190.85557440787238,
+          "realY": 50.53906545762651,
+          "marker": "facility",
+          "name": "hsitp_restroom_gf_m"
         },
         {
           "id": "hsitp_restroom_gf_f",
-          "pixelX": 1125,
-          "pixelY": 220,
-          "realX": 75,
-          "realY": 0,
-          "marker": "facility"
+          "pixelX": 2290.2668928944686,
+          "pixelY": 451.4146130410485,
+          "realX": 190.85557440787238,
+          "realY": 37.61788442008737,
+          "marker": "facility",
+          "name": "hsitp_restroom_gf_f"
         }
-      ]
+      ],
+      "paths": []
     },
     {
       "floor": 1,
@@ -143,145 +151,263 @@
           "id": "hsitp_zone_01",
           "pixelX": 1405.7053275357084,
           "pixelY": 447.31877918191486,
-          "realX": 20,
-          "realY": 10,
+          "realX": 117.1421106279757,
+          "realY": 37.276564931826236,
           "marker": "zone",
-          "name": "hsitp_zone_01"
+          "name": "hsitp_zone_01",
+          "shape": {
+            "type": "polygon",
+            "points": [
+              {
+                "pixelX": 788.449479374992,
+                "pixelY": 192.21620306105893
+              },
+              {
+                "pixelX": 2025.3935976671874,
+                "pixelY": 196.31203692019253
+              },
+              {
+                "pixelX": 2029.489439118486,
+                "pixelY": 751.2975248327955
+              },
+              {
+                "pixelX": 788.449479374992,
+                "pixelY": 769.7287771988968
+              },
+              {
+                "pixelX": 788.449479374992,
+                "pixelY": 200.40787077932615
+              },
+              {
+                "pixelX": 792.5453208262907,
+                "pixelY": 206.55162156802655
+              },
+              {
+                "pixelX": 792.5453208262907,
+                "pixelY": 206.55162156802655
+              },
+              {
+                "pixelX": 866.2704669496666,
+                "pixelY": 321.23496962376737
+              },
+              {
+                "pixelX": 866.2704669496666,
+                "pixelY": 321.23496962376737
+              },
+              {
+                "pixelX": 866.2704669496666,
+                "pixelY": 321.23496962376737
+              }
+            ]
+          },
+          "entryPoints": [
+            {
+              "id": "entry_1765350404415",
+              "name": "Entry Point",
+              "pixelX": 1050.5833322581063,
+              "pixelY": 761.5371094806295,
+              "direction": "auto"
+            },
+            {
+              "id": "entry_1765350407289",
+              "name": "Entry Point",
+              "pixelX": 1093.589667496742,
+              "pixelY": 765.6329433397632,
+              "direction": "auto"
+            }
+          ],
+          "centerPoint": {
+            "pixelX": 1060.413351741223,
+            "pixelY": 348.6770564799625
+          },
+          "anchors": [
+            {
+              "id": "anchor_1",
+              "pixelX": 1409.1094422012075,
+              "pixelY": 452.2469587268919,
+              "direction": "auto",
+              "connectsTo": []
+            },
+            {
+              "id": "anchor_2",
+              "pixelX": 1060.4853283529087,
+              "pixelY": 752.8533757212688,
+              "direction": "auto",
+              "connectsTo": []
+            },
+            {
+              "id": "anchor_3",
+              "pixelX": 1703.4567479054597,
+              "pixelY": 752.8533757212688,
+              "direction": "auto",
+              "connectsTo": []
+            }
+          ]
         },
         {
           "id": "hsitp_zone_02",
           "pixelX": 644.4439570081158,
           "pixelY": 471.8937823367165,
-          "realX": 40,
-          "realY": 10,
+          "realX": 53.703663084009655,
+          "realY": 39.324481861393046,
           "marker": "zone",
-          "name": "hsitp_zone_02"
+          "name": "hsitp_zone_02",
+          "anchors": []
         },
         {
           "id": "hsitp_zone_03",
           "pixelX": 292.5271279821426,
           "pixelY": 475.9896161958501,
-          "realX": 60,
-          "realY": 10,
+          "realX": 24.37726066517855,
+          "realY": 39.665801349654174,
           "marker": "zone",
-          "name": "hsitp_zone_03"
+          "name": "hsitp_zone_03",
+          "anchors": []
         },
         {
           "id": "hsitp_zone_05",
           "pixelX": 264.0958414512987,
           "pixelY": 885.7500315480161,
-          "realX": 20,
-          "realY": 30,
+          "realX": 22.00798678760823,
+          "realY": 73.81250262900134,
           "marker": "zone",
-          "name": "hsitp_zone_05"
+          "name": "hsitp_zone_05",
+          "anchors": []
         },
         {
           "id": "hsitp_zone_06",
           "pixelX": 1555.386141650845,
           "pixelY": 1010.1828938254631,
-          "realX": 40,
-          "realY": 30,
+          "realX": 129.6155118042371,
+          "realY": 84.18190781878859,
           "marker": "zone",
-          "name": "hsitp_zone_06"
+          "name": "hsitp_zone_06",
+          "anchors": [
+            {
+              "id": "anchor_1",
+              "pixelX": 1062.5728978969105,
+              "pixelY": 876.0185049064648,
+              "direction": "auto",
+              "connectsTo": []
+            },
+            {
+              "id": "anchor_2",
+              "pixelX": 1705.5443174494615,
+              "pixelY": 873.9309603440039,
+              "direction": "auto",
+              "connectsTo": []
+            }
+          ]
         },
         {
           "id": "hsitp_zone_07",
           "pixelX": 1889.319872442919,
           "pixelY": 1155.5580881727406,
-          "realX": 60,
-          "realY": 30,
+          "realX": 157.44332270357657,
+          "realY": 96.29650734772838,
           "marker": "zone",
-          "name": "hsitp_zone_07"
+          "name": "hsitp_zone_07",
+          "anchors": []
         },
         {
           "id": "hsitp_corridor_1",
           "pixelX": 2016.761232529548,
           "pixelY": 816.3648165293051,
-          "realX": 40,
-          "realY": 20,
-          "marker": "corridor",
-          "name": "hsitp_corridor_1"
+          "realX": 168.063436044129,
+          "realY": 68.03040137744209,
+          "marker": "zone",
+          "name": "hsitp_corridor_1",
+          "anchors": []
         },
         {
           "id": "hsitp_lift_lobby_1",
           "pixelX": 2285.5590417688686,
           "pixelY": 818.1353400286129,
-          "realX": 80,
-          "realY": 20,
-          "marker": "elevator",
-          "name": "hsitp_lift_lobby_1"
+          "realX": 190.46325348073904,
+          "realY": 68.1779450023844,
+          "marker": "zone",
+          "name": "hsitp_lift_lobby_1",
+          "anchors": []
         },
         {
           "id": "hsitp_stairs_1",
           "pixelX": 2303.7524353895983,
           "pixelY": 1118.1657082078925,
-          "realX": 85,
-          "realY": 20,
-          "marker": "stairs",
-          "name": "hsitp_stairs_1"
+          "realX": 191.97936961579987,
+          "realY": 93.18047568399105,
+          "marker": "zone",
+          "name": "hsitp_stairs_1",
+          "anchors": []
         },
         {
           "id": "hsitp_tel_equip_1",
           "pixelX": 815.7279073068139,
           "pixelY": 709.7146256602548,
-          "realX": 35,
-          "realY": 20,
-          "marker": "facility",
-          "name": "hsitp_tel_equip_1"
+          "realX": 67.97732560890115,
+          "realY": 59.1428854716879,
+          "marker": "zone",
+          "name": "hsitp_tel_equip_1",
+          "anchors": []
         },
         {
           "id": "hsitp_ahu_1_top",
           "pixelX": 2244.308478381482,
           "pixelY": 274.9229327035748,
-          "realX": 90,
-          "realY": 5,
-          "marker": "facility",
-          "name": "hsitp_ahu_1_top"
+          "realX": 187.02570653179018,
+          "realY": 22.910244391964568,
+          "marker": "zone",
+          "name": "hsitp_ahu_1_top",
+          "anchors": []
         },
         {
           "id": "hsitp_ahu_1_bottom",
           "pixelX": 600.5425596428526,
           "pixelY": 1245.1167276594979,
-          "realX": 5,
-          "realY": 35,
-          "marker": "facility",
-          "name": "hsitp_ahu_1_bottom"
+          "realX": 50.045213303571046,
+          "realY": 103.75972730495816,
+          "marker": "zone",
+          "name": "hsitp_ahu_1_bottom",
+          "anchors": []
         },
         {
           "id": "hsitp_lav_f_1",
           "pixelX": 2296.410655071417,
           "pixelY": 449.97710515404447,
-          "realX": 90,
-          "realY": 15,
-          "marker": "facility",
-          "name": "hsitp_lav_f_1"
+          "realX": 191.36755458928474,
+          "realY": 37.498092096170375,
+          "marker": "zone",
+          "name": "hsitp_lav_f_1",
+          "anchors": []
         },
         {
           "id": "hsitp_lav_m_1",
           "pixelX": 2292.314813620118,
           "pixelY": 641.1750283932145,
-          "realX": 90,
-          "realY": 25,
-          "marker": "facility",
-          "name": "hsitp_lav_m_1"
+          "realX": 191.02623446834318,
+          "realY": 53.431252366101205,
+          "marker": "zone",
+          "name": "hsitp_lav_m_1",
+          "anchors": []
         },
         {
           "id": "hsitp_meter_1",
           "pixelX": 2012.7623446834318,
           "pixelY": 700.9781687728723,
-          "realX": 88,
-          "realY": 20,
-          "marker": "facility",
-          "name": "hsitp_meter_1"
+          "realX": 167.73019539028599,
+          "realY": 58.41484739773936,
+          "marker": "zone",
+          "name": "hsitp_meter_1",
+          "anchors": []
         },
         {
           "id": "hsitp_pantry_1",
           "pixelX": 2187.979368540573,
           "pixelY": 1237.860503686611,
-          "realX": 82,
-          "realY": 30,
-          "marker": "facility",
-          "name": "hsitp_pantry_1"
+          "realX": 182.33161404504776,
+          "realY": 103.15504197388425,
+          "marker": "zone",
+          "name": "hsitp_pantry_1",
+          "anchors": []
         }
       ],
       "paths": [
@@ -487,6 +613,84 @@
             {
               "pixelX": 2123.693792498355,
               "pixelY": 819.9027419732834
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lav_f_1",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2118.8830871618156,
+              "pixelY": 442.8530081958176
+            },
+            {
+              "pixelX": 2125.145795793821,
+              "pixelY": 812.3483957514059
+            }
+          ]
+        },
+        {
+          "from": "hsitp_ahu_1_top",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2120.9706567058174,
+              "pixelY": 273.76189863648057
+            },
+            {
+              "pixelX": 2125.145795793821,
+              "pixelY": 822.7861185637106
+            }
+          ]
+        },
+        {
+          "from": "hsitp_lav_m_1",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2120.9706567058174,
+              "pixelY": 636.994652504686
+            },
+            {
+              "pixelX": 2127.2333653378228,
+              "pixelY": 814.4359403138668
+            },
+            {
+              "pixelX": 2127.2333653378228,
+              "pixelY": 818.6110294387887
+            }
+          ]
+        },
+        {
+          "from": "hsitp_pantry_1",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2129.837554675303,
+              "pixelY": 1237.6777956049107
+            },
+            {
+              "pixelX": 2119.5979510470565,
+              "pixelY": 807.6152403958826
+            }
+          ]
+        },
+        {
+          "from": "hsitp_stairs_1",
+          "to": "hsitp_corridor_1",
+          "waypoints": [
+            {
+              "pixelX": 2290.063789769962,
+              "pixelY": 1035.7156639347274
+            },
+            {
+              "pixelX": 2125.145795793821,
+              "pixelY": 1041.9782976221104
+            },
+            {
+              "pixelX": 2116.795517617814,
+              "pixelY": 818.6110294387887
             }
           ]
         }

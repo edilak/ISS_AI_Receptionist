@@ -1,0 +1,536 @@
+.space-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0a0e1a;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  color: white;
+}
+
+/* Header */
+.editor-header {
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+  border-bottom: 2px solid #00c896;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.editor-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: white;
+}
+
+.floor-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floor-selector label {
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+.floor-selector select {
+  padding: 8px 12px;
+  background: #1b263b;
+  border: 1px solid #415a77;
+  border-radius: 5px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.header-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-train {
+  background: linear-gradient(135deg, #00c896 0%, #00a080 100%);
+  color: white;
+}
+
+.btn-train:hover:not(:disabled) {
+  background: linear-gradient(135deg, #00daa6 0%, #00b090 100%);
+  transform: translateY(-1px);
+}
+
+.btn-train:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-train.training {
+  background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+  animation: pulse 1.5s infinite;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+}
+
+.btn-save:hover {
+  background: linear-gradient(135deg, #5aa0e9 0%, #458acd 100%);
+}
+
+.btn-close {
+  background: #415a77;
+  color: white;
+}
+
+.btn-close:hover {
+  background: #526a87;
+}
+
+/* Main content */
+.editor-content {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Tools panel */
+.tools-panel {
+  width: 280px;
+  background: #0d1b2a;
+  border-right: 1px solid #1b263b;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.tool-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #1b263b;
+}
+
+.tool-section:last-child {
+  border-bottom: none;
+}
+
+.tool-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #00c896;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Mode buttons */
+.mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-btn {
+  padding: 10px 15px;
+  background: #1b263b;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background: #243447;
+  color: white;
+}
+
+.mode-btn.active {
+  background: rgba(0, 200, 150, 0.15);
+  border-color: #00c896;
+  color: #00c896;
+}
+
+/* Input groups */
+.input-group {
+  margin-bottom: 10px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  color: #a0aec0;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #1b263b;
+  border: 1px solid #415a77;
+  border-radius: 5px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  outline: none;
+  border-color: #00c896;
+}
+
+/* Checkbox labels */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #a0aec0;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  accent-color: #00c896;
+}
+
+/* Help text */
+.help-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+/* Drawing controls */
+.drawing-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 204, 0, 0.1);
+  border-radius: 5px;
+}
+
+.drawing-controls span {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #ffcc00;
+}
+
+/* Small buttons */
+.btn-small {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-finish {
+  background: #00c896;
+  color: white;
+}
+
+.btn-finish:hover:not(:disabled) {
+  background: #00daa6;
+}
+
+.btn-finish:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #7b8290;
+}
+
+.btn-delete {
+  width: 100%;
+  margin-top: 10px;
+  background: #dc2626;
+  color: white;
+  padding: 8px;
+}
+
+.btn-delete:hover {
+  background: #ef4444;
+}
+
+/* Properties section */
+.properties {
+  background: rgba(0, 200, 150, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.properties .info {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 5px 0;
+}
+
+/* Stats section */
+.stats p {
+  margin: 5px 0;
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+
+/* Instructions section */
+.instructions ol {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.instructions li {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 6px 0;
+  line-height: 1.4;
+}
+
+/* Canvas area */
+.canvas-container {
+  flex: 1;
+  background: #0f1923;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.canvas-wrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  display: inline-block;
+}
+
+.canvas-wrapper img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 150px);
+  object-fit: contain;
+  pointer-events: none; /* Let SVG handle all interactions */
+  user-select: none;
+  width: auto;
+  height: auto;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: all;
+  /* Ensure SVG matches image exactly */
+  overflow: visible;
+}
+
+/* Corridor styling */
+.corridor-group {
+  transition: all 0.2s;
+}
+
+.corridor-group polygon {
+  transition: all 0.2s;
+}
+
+.corridor-group.selected polygon {
+  filter: drop-shadow(0 0 10px rgba(0, 200, 150, 0.5));
+}
+
+.corridor-group circle {
+  transition: all 0.2s;
+}
+
+.corridor-group circle:hover {
+  transform: scale(1.3);
+  transform-origin: center;
+}
+
+/* Destination styling */
+.destination-group {
+  transition: all 0.2s;
+}
+
+.destination-group.selected circle {
+  filter: drop-shadow(0 0 10px rgba(255, 68, 68, 0.6));
+}
+
+.destination-group circle:hover {
+  transform: scale(1.2);
+  transform-origin: center;
+}
+
+/* Current polygon */
+.current-polygon circle {
+  animation: pulse-point 1s infinite;
+}
+
+@keyframes pulse-point {
+  0%, 100% { r: 6; }
+  50% { r: 8; }
+}
+
+/* Cursor crosshair */
+.cursor-crosshair {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* No image placeholder */
+.no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+/* Training overlay */
+.training-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.training-modal {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+  padding: 40px 50px;
+  border-radius: 16px;
+  text-align: center;
+  border: 2px solid #00c896;
+  box-shadow: 0 20px 60px rgba(0, 200, 150, 0.2);
+}
+
+.training-modal h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.progress-bar {
+  width: 300px;
+  height: 12px;
+  background: #1b263b;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00c896 0%, #00ffaa 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.training-modal p {
+  margin: 10px 0;
+  color: #a0aec0;
+  font-size: 1rem;
+}
+
+.training-info {
+  font-size: 0.85rem !important;
+  color: #6b7280 !important;
+  margin-top: 15px !important;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Scrollbar styling */
+.tools-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tools-panel::-webkit-scrollbar-track {
+  background: #0d1b2a;
+}
+
+.tools-panel::-webkit-scrollbar-thumb {
+  background: #415a77;
+  border-radius: 3px;
+}
+
+.tools-panel::-webkit-scrollbar-thumb:hover {
+  background: #526a87;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .tools-panel {
+    width: 250px;
+  }
+}
+
+@media (max-width: 900px) {
+  .editor-content {
+    flex-direction: column;
+  }
+  
+  .tools-panel {
+    width: 100%;
+    max-height: 200px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+  
+  .tool-section {
+    min-width: 200px;
+    flex: 1;
+  }
+}
+
