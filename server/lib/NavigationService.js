@@ -352,34 +352,98 @@ class NavigationService {
   }
 
   /**
-   * Find location by name or partial match
+   * Find location by name or partial match with improved zone handling
    */
   findLocation(query) {
-    if (!this.graph) return null;
+    if (!this.graph || !query) return null;
 
-    const normalizedQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const queryLower = query.toLowerCase().trim();
+    const normalizedQuery = queryLower.replace(/[^a-z0-9]/g, '');
     
-    // Exact ID match
+    // 1. Exact ID match
     let location = this.graph.nodes.find(n => 
       n.id.toLowerCase() === normalizedQuery ||
       n.id.toLowerCase() === `hsitp_${normalizedQuery}`
     );
-    
-    if (location) return location;
+    if (location) {
+      console.log(`✅ Location match (exact ID): "${query}" → ${location.id}`);
+      return location;
+    }
 
-    // Name match
+    // 2. Zone number matching (e.g., "zone 5", "zone5", "zone 05" → zone_05)
+    const zoneMatch = queryLower.match(/zone\s*0?([1-7])/i);
+    if (zoneMatch) {
+      const zoneNum = zoneMatch[1].padStart(2, '0'); // "5" → "05"
+      const zonePatterns = [
+        `hsitp_zone_${zoneNum}`,      // hsitp_zone_05
+        `hsitp_zone_${zoneNum}_1`,    // hsitp_zone_05_1 (floor 1)
+        `zone_${zoneNum}`,            // zone_05
+        `zone_${zoneNum}_1`           // zone_05_1
+      ];
+      
+      // Try to find zone on floor 1 first (most common)
     location = this.graph.nodes.find(n => 
-      n.name.toLowerCase().includes(normalizedQuery)
-    );
-    
-    if (location) return location;
+        zonePatterns.some(pattern => n.id.toLowerCase() === pattern) && n.floor === 1
+      );
+      
+      // If not found on floor 1, try any floor
+      if (!location) {
+        location = this.graph.nodes.find(n => 
+          zonePatterns.some(pattern => n.id.toLowerCase().includes(pattern))
+        );
+      }
+      
+      if (location) {
+        console.log(`✅ Location match (zone): "${query}" → ${location.id} (floor ${location.floor})`);
+        return location;
+      }
+    }
 
-    // Fuzzy match on ID
+    // 3. Name match (case-insensitive, partial)
+    location = this.graph.nodes.find(n => {
+      const nameLower = n.name.toLowerCase();
+      return nameLower === queryLower || 
+             nameLower.includes(queryLower) || 
+             queryLower.includes(nameLower);
+    });
+    if (location) {
+      console.log(`✅ Location match (name): "${query}" → ${location.id}`);
+      return location;
+    }
+
+    // 4. Fuzzy match on ID (contains)
     location = this.graph.nodes.find(n => 
-      n.id.toLowerCase().includes(normalizedQuery)
+      n.id.toLowerCase().includes(normalizedQuery) ||
+      normalizedQuery.includes(n.id.toLowerCase().replace('hsitp_', ''))
     );
-
+    if (location) {
+      console.log(`✅ Location match (fuzzy ID): "${query}" → ${location.id}`);
     return location;
+    }
+
+    // 5. Try matching with common location keywords
+    const locationKeywords = {
+      'reception': ['reception', 'reception desk', 'front desk'],
+      'lobby': ['lobby', 'main lobby'],
+      'lift': ['lift', 'elevator', 'lift lobby', 'elevator lobby'],
+      'pantry': ['pantry', 'common pantry', 'kitchen'],
+      'corridor': ['corridor', 'hallway', 'hall'],
+    };
+
+    for (const [key, keywords] of Object.entries(locationKeywords)) {
+      if (keywords.some(kw => queryLower.includes(kw))) {
+        location = this.graph.nodes.find(n => 
+          n.id.toLowerCase().includes(key) && n.floor === 1
+        );
+        if (location) {
+          console.log(`✅ Location match (keyword): "${query}" → ${location.id}`);
+          return location;
+        }
+      }
+    }
+
+    console.warn(`⚠️ Location not found: "${query}"`);
+    return null;
   }
 
   /**

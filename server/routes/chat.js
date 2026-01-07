@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const OpenAI = require('openai');
-const { getInstance: getNavigationService } = require('../lib/NavigationService');
-const { findShortestPath, findLocation, getLocationGraph } = require('./pathFinder');
+const { getSpaceNavigationEngine } = require('../lib/SpaceNavigationEngine');
+// Graph-based pathfinding removed - using RL method only
+const { findLocation, getLocationGraph } = require('./pathFinder'); // Only for location lookup, not pathfinding
 
 // Azure OpenAI Configuration
 const azureApiKey = process.env.AZURE_OPENAI_API_KEY;
@@ -41,16 +42,16 @@ const openai = (azureApiKey && azureEndpoint) ? (() => {
   });
 })() : null;
 
-// Navigation service instance
-let navigationService = null;
+// Space Navigation Engine instance (RL method only)
+let spaceNavEngine = null;
 
-// Initialize navigation service on startup
+// Initialize Space Navigation Engine on startup
 (async () => {
   try {
-    navigationService = await getNavigationService();
-    console.log('✅ Chat route: NavigationService connected');
+    spaceNavEngine = getSpaceNavigationEngine();
+    console.log('✅ Space Navigation Engine (RL) initialized');
   } catch (error) {
-    console.warn('⚠️ NavigationService not available, using legacy pathfinding');
+    console.warn('⚠️ Space Navigation Engine not available');
   }
 })();
 
@@ -126,15 +127,13 @@ function findLocationImage(message, context) {
   return null;
 }
 
-// AI-powered location normalization using NavigationService or legacy
+// AI-powered location normalization (for location lookup only, not pathfinding)
 async function normalizeLocationWithAI(userInput) {
-  // Try NavigationService first
-  if (navigationService) {
-    const location = navigationService.findLocation(userInput);
-    if (location) {
-      console.log(`✅ NavigationService matched "${userInput}" → ${location.id}`);
-      return location;
-    }
+  // Try simple location lookup (no graph pathfinding)
+  const location = findLocation(userInput);
+  if (location) {
+    console.log(`✅ Location matched "${userInput}" → ${location.id}`);
+    return location;
   }
 
   // Fallback to AI-based matching
@@ -306,14 +305,14 @@ async function runOpenAI(prompt, options = {}) {
   try {
     // For Azure OpenAI, we don't need to specify model in the request
     // as it's already in the baseURL deployment path
-    const completion = await openai.chat.completions.create({
-      temperature,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: prompt }
-      ]
-    });
-    return completion.choices[0]?.message?.content || '';
+  const completion = await openai.chat.completions.create({
+    temperature,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: prompt }
+    ]
+  });
+  return completion.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('❌ Azure OpenAI API Error:', error.message);
     if (error.status === 401) {
@@ -373,7 +372,7 @@ Rules:
     let pathData = null;
     let navigationResponse = null;
 
-    // Step 2: Execute Navigation using new NavigationService
+    // Step 2: Execute Navigation using Space Navigation Engine (Continuous Space RL)
     if (intentData.intent === 'navigation' && intentData.to) {
       console.log('🧭 Navigation intent detected:', intentData);
       
@@ -384,99 +383,108 @@ Rules:
       console.log('  From:', fromInput);
       console.log('  To:', toInput);
       
-      // Try NavigationService first (with A* and RL)
-      if (navigationService) {
-        const fromLocation = navigationService.findLocation(fromInput);
-        const toLocation = navigationService.findLocation(toInput);
+      // PRIMARY: Try Space Navigation Engine (Continuous 2D RL)
+      if (spaceNavEngine && spaceNavEngine.corridors.length > 0) {
+        console.log('🚀 Using Space Navigation Engine (Continuous RL)');
         
-        if (fromLocation && toLocation) {
-          console.log(`🚀 Using NavigationService for pathfinding (A* + RL)`);
+        try {
+          const spaceNavResult = await spaceNavEngine.navigate(fromInput, toInput, { floor: 1 });
           
-          try {
-            navigationResponse = await navigationService.navigate(
-              fromLocation.id, 
-              toLocation.id, 
-              { 
-                language, 
-                accessibilityMode: false,
-                includeVisualization: true 
-              }
-            );
-
-            if (navigationResponse.success) {
-              const formattedFrom = formatNodeLabel(fromLocation);
-              const formattedTo = formatNodeLabel(toLocation);
-              
-              pathResult = {
-                found: true,
-                from: formattedFrom,
-                to: formattedTo,
-                distance: navigationResponse.pathDetails.totalDistance,
-                time: Math.ceil(navigationResponse.pathDetails.estimatedTime / 60),
-                steps: navigationResponse.path.length,
-                algorithm: navigationResponse.pathDetails.algorithm,
-                nodesExplored: navigationResponse.pathDetails.nodesExplored
-              };
-              
-              pathData = navigationResponse.pathData;
-              
-              console.log(`✅ Path found via NavigationService:`);
-              console.log(`   Algorithm: ${pathResult.algorithm}`);
-              console.log(`   Nodes explored: ${pathResult.nodesExplored}`);
-              console.log(`   Steps: ${pathResult.steps}`);
-              console.log(`   Time: ~${pathResult.time} mins`);
-            } else {
-              console.warn(`⚠️ NavigationService couldn't find path: ${navigationResponse.error}`);
-            }
-          } catch (error) {
-            console.warn(`⚠️ NavigationService error: ${error.message}`);
+          if (spaceNavResult.success) {
+            const totalDistanceMeters = spaceNavResult.stats.totalDistance / 12; // Convert pixels to meters (12 pixels/meter)
+            const estimatedTimeMinutes = Math.ceil(totalDistanceMeters / 80); // Walking speed ~80m/min
+            
+            pathResult = {
+              found: true,
+              from: fromInput,
+              to: spaceNavResult.destination.name,
+              distance: Math.round(totalDistanceMeters),
+              time: Math.max(1, estimatedTimeMinutes),
+              steps: spaceNavResult.stats.simplifiedPoints,
+              algorithm: 'Continuous Space RL'
+            };
+            
+            // Build path data for visualization
+            pathData = {
+              from: { 
+                name: fromInput, 
+                floor: 1, 
+                x: spaceNavResult.start.x,
+                y: spaceNavResult.start.y,
+                pixelX: spaceNavResult.start.x,
+                pixelY: spaceNavResult.start.y
+              },
+              to: { 
+                name: spaceNavResult.destination.name,
+                floor: spaceNavResult.destination.floor,
+                x: spaceNavResult.destination.x,
+                y: spaceNavResult.destination.y,
+                pixelX: spaceNavResult.destination.x,
+                pixelY: spaceNavResult.destination.y
+              },
+              path: spaceNavResult.path.map((p, i) => ({
+                id: `step_${i}`,
+                name: i === 0 ? fromInput : i === spaceNavResult.path.length - 1 ? spaceNavResult.destination.name : `Step ${i}`,
+                floor: 1,
+                x: p.x,
+                y: p.y,
+                pixelX: p.x,
+                pixelY: p.y,
+                type: i === spaceNavResult.path.length - 1 ? 'destination' : 'waypoint'
+              })),
+              visualization: {
+                svgPath: spaceNavResult.svgPath,
+                smoothPath: spaceNavResult.path,
+                arrows: spaceNavResult.arrows || [], // Include arrows for visualization
+                animation: {
+                  totalLength: spaceNavResult.stats.totalDistance
+                }
+              },
+              destination: spaceNavResult.destination,
+              totalDistance: totalDistanceMeters,
+              estimatedTime: estimatedTimeMinutes * 60
+            };
+            
+            console.log(`✅ Space Navigation found path:`);
+            console.log(`   Algorithm: ${pathResult.algorithm}`);
+            console.log(`   Path points: ${spaceNavResult.stats.originalPoints} → ${spaceNavResult.stats.simplifiedPoints}`);
+            console.log(`   Distance: ${pathResult.distance}m (~${totalDistanceMeters.toFixed(0)}px)`);
+            console.log(`   Time: ~${pathResult.time} min`);
+          } else {
+            console.warn(`⚠️ RL Navigation couldn't find path: ${spaceNavResult.error}`);
+            pathResult = { 
+              found: false, 
+              error: spaceNavResult.error || 'Path not found. The RL agent may need more training, or the destination may not be reachable.'
+            };
           }
+        } catch (error) {
+          console.error(`❌ RL Navigation error: ${error.message}`);
+          pathResult = { 
+            found: false, 
+            error: `Navigation error: ${error.message}. Please ensure corridors are defined and the RL agent is trained.`
+          };
         }
+      } else {
+        // No space navigation engine or no corridors defined
+        console.warn('⚠️ Space Navigation Engine not available or no corridors defined');
+        pathResult = { 
+          found: false, 
+          error: 'Navigation not configured. Please use the Space Editor to define corridors and train the RL agent.'
+        };
       }
       
-      // Fallback to legacy pathfinding if NavigationService fails
+      // Ensure we have a result (RL method only, no graph fallback)
       if (!pathResult || !pathResult.found) {
-        console.log('🔄 Falling back to legacy pathfinding...');
-        
-        const fromLocation = await normalizeLocationWithAI(fromInput);
-        const toLocation = await normalizeLocationWithAI(toInput);
-      
-      if (fromLocation && toLocation) {
-        const formattedFrom = formatNodeLabel(fromLocation);
-        const formattedTo = formatNodeLabel(toLocation);
-          
-        const graph = getLocationGraph();
-        const path = findShortestPath(graph, fromLocation.id, toLocation.id);
-        
-          if (path && path.path && path.path.length > 0) {
-            console.log(`✅ Legacy path found: ${path.path.length} steps`);
-            
-          pathResult = {
-            found: true,
-            from: formattedFrom,
-            to: formattedTo,
-            distance: path.totalDistance,
-            time: path.estimatedTime,
-              steps: path.path.length,
-              algorithm: 'Dijkstra (legacy)'
+        if (!spaceNavEngine || spaceNavEngine.corridors.length === 0) {
+          pathResult = { 
+            found: false, 
+            error: 'Navigation not configured. Please use the Space Editor to define corridors and train the RL agent.'
           };
-          
-          pathData = {
-            from: fromLocation,
-            to: toLocation,
-              path: path.path,
-            totalDistance: path.totalDistance,
-            estimatedTime: path.estimatedTime,
-            pathIds: path.pathIds
-          };
-          } else {
-            pathResult = { found: false, error: 'No path found' };
-            }
         } else {
-          const missingLocations = [];
-          if (!fromLocation) missingLocations.push(`From: "${fromInput}"`);
-          if (!toLocation) missingLocations.push(`To: "${toInput}"`);
-          pathResult = { found: false, error: `Location not found: ${missingLocations.join(', ')}` };
+          pathResult = { 
+            found: false, 
+            error: pathResult?.error || 'Could not find a path. The RL agent may need more training, or the destination may not be reachable.'
+          };
         }
       }
     }
@@ -523,8 +531,8 @@ Keep it helpful and concise.`;
     const isPathQuery = intentData.intent === 'navigation';
     const locationImage = findLocationImage(message, context);
 
-    // Include navigation stats if available
-    const stats = navigationService?.getStats() || null;
+    // Include navigation stats if available (RL method only)
+    const stats = spaceNavEngine?.getStats() || null;
 
     res.json({
       message: responseText,
@@ -562,7 +570,7 @@ Keep it helpful and concise.`;
 
 // Health check for chat service
 router.get('/health', async (req, res) => {
-  const navStats = navigationService?.getStats() || null;
+  const navStats = spaceNavEngine?.getStats() || null;
   
   res.json({ 
     status: 'ok', 
@@ -570,18 +578,18 @@ router.get('/health', async (req, res) => {
     provider: 'Azure OpenAI',
     model: openai ? azureDeploymentName : 'not initialized',
     endpoint: azureEndpoint ? azureEndpoint.replace(/https?:\/\//, '').split('/')[0] : 'not configured',
-    navigationService: navigationService ? 'connected' : 'not available',
+    spaceNavigationEngine: spaceNavEngine ? 'connected' : 'not available',
     stats: navStats
   });
 });
 
-// Navigation stats endpoint
+// Navigation stats endpoint (RL method only)
 router.get('/navigation-stats', (req, res) => {
-  if (!navigationService) {
-    return res.status(503).json({ error: 'NavigationService not available' });
+  if (!spaceNavEngine) {
+    return res.status(503).json({ error: 'Space Navigation Engine (RL) not available' });
   }
   
-  res.json(navigationService.getStats());
+  res.json(spaceNavEngine.getStats());
 });
 
 module.exports = router;

@@ -135,6 +135,118 @@ const SpaceEditor = ({ onClose, onSave }) => {
     return Math.round(coord / gridSize) * gridSize;
   }, [snapToGrid, gridSize]);
 
+  // **NEW: Find nearby corridor points to snap to (auto-connection)**
+  const findNearbyCorridorPoint = useCallback((x, y, snapDistance = 30) => {
+    const floorCorridors = corridors.filter(c => c.floor === currentFloor);
+    
+    for (const corridor of floorCorridors) {
+      for (const point of corridor.polygon) {
+        const dx = point[0] - x;
+        const dy = point[1] - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < snapDistance) {
+          return { x: point[0], y: point[1], corridorId: corridor.id };
+        }
+      }
+    }
+    return null;
+  }, [corridors, currentFloor]);
+
+  // **NEW: Check if all corridors are connected**
+  const checkCorridorsConnected = useCallback(() => {
+    const floorCorridors = corridors.filter(c => c.floor === currentFloor);
+    if (floorCorridors.length <= 1) return { connected: true, isolated: [] };
+    
+    // Build connectivity graph
+    const adjacencyMap = new Map();
+    floorCorridors.forEach(c => adjacencyMap.set(c.id, new Set()));
+    
+    // Check which corridors touch (share points or are very close)
+    for (let i = 0; i < floorCorridors.length; i++) {
+      for (let j = i + 1; j < floorCorridors.length; j++) {
+        if (corridorsTouchOrOverlap(floorCorridors[i], floorCorridors[j])) {
+          adjacencyMap.get(floorCorridors[i].id).add(floorCorridors[j].id);
+          adjacencyMap.get(floorCorridors[j].id).add(floorCorridors[i].id);
+        }
+      }
+    }
+    
+    // BFS to find connected component
+    const visited = new Set();
+    const queue = [floorCorridors[0].id];
+    visited.add(floorCorridors[0].id);
+    
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      const neighbors = adjacencyMap.get(currentId);
+      
+      for (const neighborId of neighbors) {
+        if (!visited.has(neighborId)) {
+          visited.add(neighborId);
+          queue.push(neighborId);
+        }
+      }
+    }
+    
+    // Find isolated corridors
+    const isolated = floorCorridors
+      .filter(c => !visited.has(c.id))
+      .map(c => c.name || c.id);
+    
+    return {
+      connected: isolated.length === 0,
+      isolated,
+      connectedCount: visited.size,
+      totalCount: floorCorridors.length
+    };
+  }, [corridors, currentFloor]);
+
+  // **NEW: Check if two corridors touch or overlap**
+  const corridorsTouchOrOverlap = (corridor1, corridor2, threshold = 5) => {
+    // Check if any point from corridor1 is very close to any point from corridor2
+    for (const p1 of corridor1.polygon) {
+      for (const p2 of corridor2.polygon) {
+        const dx = p1[0] - p2[0];
+        const dy = p1[1] - p2[1];
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= threshold) {
+          return true;
+        }
+      }
+    }
+    
+    // Check if polygons overlap (point-in-polygon test)
+    for (const point of corridor1.polygon) {
+      if (isPointInPolygon(point[0], point[1], corridor2.polygon)) {
+        return true;
+      }
+    }
+    
+    for (const point of corridor2.polygon) {
+      if (isPointInPolygon(point[0], point[1], corridor1.polygon)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // **NEW: Point-in-polygon test**
+  const isPointInPolygon = (x, y, polygon) => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i][0], yi = polygon[i][1];
+      const xj = polygon[j][0], yj = polygon[j][1];
+      
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
   // Get image coordinates from mouse event
   const getImageCoords = useCallback((event) => {
     const imgElement = imageRef.current;
@@ -394,8 +506,19 @@ const SpaceEditor = ({ onClose, onSave }) => {
         }
       }
       
+      // **NEW: Auto-snap to nearby corridor points for connection**
+      const nearbyPoint = findNearbyCorridorPoint(coords.x, coords.y, 30);
+      const finalCoords = nearbyPoint 
+        ? { x: nearbyPoint.x, y: nearbyPoint.y }
+        : coords;
+      
+      // Visual feedback for snap
+      if (nearbyPoint && currentPolygon.length > 0) {
+        console.log(`🔗 Auto-snapping to existing corridor point at (${nearbyPoint.x}, ${nearbyPoint.y})`);
+      }
+      
       // Add point to current polygon
-      setCurrentPolygon(prev => [...prev, [coords.x, coords.y]]);
+      setCurrentPolygon(prev => [...prev, [finalCoords.x, finalCoords.y]]);
     } else if (editorMode === 'destination') {
       // Add new destination
       const newDest = {
@@ -509,6 +632,23 @@ const SpaceEditor = ({ onClose, onSave }) => {
 
   // Save space definitions
   const handleSave = async () => {
+    // **NEW: Validate corridor connectivity before saving**
+    const connectivity = checkCorridorsConnected();
+    
+    if (!connectivity.connected) {
+      const proceed = window.confirm(
+        `⚠️ Warning: Not all corridors are connected!\n\n` +
+        `Connected: ${connectivity.connectedCount}/${connectivity.totalCount} corridors\n\n` +
+        `Isolated corridors:\n${connectivity.isolated.join(', ')}\n\n` +
+        `The RL agent will NOT be able to navigate to destinations in isolated corridors.\n\n` +
+        `Do you want to save anyway? (Recommended: Cancel and connect corridors first)`
+      );
+      
+      if (!proceed) {
+        return;
+      }
+    }
+    
     try {
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
       const response = await fetch(`${API_BASE_URL}/space-nav/definitions`, {
@@ -522,7 +662,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
       });
 
       if (response.ok) {
-        alert('Space definitions saved successfully!');
+        const message = connectivity.connected 
+          ? '✅ Space definitions saved successfully!\n\nAll corridors are connected.' 
+          : '⚠️ Space definitions saved with warnings.\n\nSome corridors are not connected.';
+        alert(message);
         if (onSave) onSave({ corridors, destinations });
       } else {
         throw new Error('Failed to save');
@@ -552,18 +695,40 @@ const SpaceEditor = ({ onClose, onSave }) => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (!data.success) {
+          alert(`Training failed: ${data.error || 'Unknown error'}`);
+          setIsTraining(false);
+          return;
+        }
+        
         // Poll for progress
         const pollProgress = setInterval(async () => {
-          const progressRes = await fetch(`${API_BASE_URL}/space-nav/training-progress`);
-          const { progress, complete } = await progressRes.json();
-          setTrainingProgress(progress);
-          
-          if (complete) {
-            clearInterval(pollProgress);
-            setIsTraining(false);
-            alert('Training complete! The RL agent is ready.');
+          try {
+            const progressRes = await fetch(`${API_BASE_URL}/space-nav/training-progress`);
+            if (!progressRes.ok) {
+              console.error('Failed to get training progress');
+              return;
+            }
+            
+            const { progress, complete, isTraining } = await progressRes.json();
+            setTrainingProgress(progress || 0);
+            
+            if (complete || !isTraining) {
+              clearInterval(pollProgress);
+              setIsTraining(false);
+              if (progress >= 100) {
+                alert('Training complete! The RL agent is ready.');
+              }
+            }
+          } catch (error) {
+            console.error('Error polling training progress:', error);
           }
-        }, 500);
+        }, 300); // Poll more frequently
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        alert(`Training failed: ${errorData.error || 'Unknown error'}`);
+        setIsTraining(false);
       }
     } catch (error) {
       console.error('Training error:', error);
@@ -690,6 +855,9 @@ const SpaceEditor = ({ onClose, onSave }) => {
 
     const points = currentPolygon.map(p => p.join(',')).join(' ');
     
+    // **NEW: Check if mouse is near a corridor point for snapping**
+    const nearbyPoint = mousePosition ? findNearbyCorridorPoint(mousePosition.x, mousePosition.y, 30) : null;
+    
     return (
       <g className="current-polygon">
         <polyline
@@ -722,6 +890,41 @@ const SpaceEditor = ({ onClose, onSave }) => {
             strokeWidth="2"
           />
         ))}
+        {/* **NEW: Visual snap indicator** */}
+        {nearbyPoint && mousePosition && (
+          <g className="snap-indicator">
+            <circle
+              cx={nearbyPoint.x}
+              cy={nearbyPoint.y}
+              r={20}
+              fill="none"
+              stroke="#00ff00"
+              strokeWidth="2"
+              strokeDasharray="4,4"
+            >
+              <animate attributeName="r" values="15;25;15" dur="1s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />
+            </circle>
+            <line
+              x1={mousePosition.x}
+              y1={mousePosition.y}
+              x2={nearbyPoint.x}
+              y2={nearbyPoint.y}
+              stroke="#00ff00"
+              strokeWidth="1"
+              strokeDasharray="2,2"
+              opacity="0.6"
+            />
+            <circle
+              cx={nearbyPoint.x}
+              cy={nearbyPoint.y}
+              r={6}
+              fill="#00ff00"
+              stroke="white"
+              strokeWidth="2"
+            />
+          </g>
+        )}
       </g>
     );
   };
@@ -816,6 +1019,35 @@ const SpaceEditor = ({ onClose, onSave }) => {
           </div>
         </div>
         <div className="header-actions">
+          <button 
+            className="btn-check-connectivity"
+            onClick={() => {
+              const connectivity = checkCorridorsConnected();
+              if (connectivity.connected) {
+                alert(`✅ All corridors are connected!\n\n${connectivity.totalCount} corridor(s) form a connected network.`);
+              } else {
+                alert(
+                  `⚠️ Warning: Disconnected corridors detected!\n\n` +
+                  `Connected: ${connectivity.connectedCount}/${connectivity.totalCount}\n\n` +
+                  `Isolated corridors:\n${connectivity.isolated.join('\n')}\n\n` +
+                  `Please connect these corridors or the RL agent won't be able to navigate to destinations in them.`
+                );
+              }
+            }}
+            disabled={corridors.length <=1}
+            style={{
+              background: corridors.length > 1 ? (checkCorridorsConnected().connected ? '#4CAF50' : '#ff9800') : '#666',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '5px',
+              border: 'none',
+              cursor: corridors.length > 1 ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            {corridors.length > 1 ? (checkCorridorsConnected().connected ? '✓ Corridors Connected' : '⚠️ Check Connectivity') : '🔗 Connectivity'}
+          </button>
           <button 
             className={`btn-train ${isTraining ? 'training' : ''}`}
             onClick={handleTrain}

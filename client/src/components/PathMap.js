@@ -20,8 +20,10 @@ const PathMap = ({ pathData, onClose, language }) => {
 
   // Debug: Log when component receives pathData
   useEffect(() => {
-    if (pathData && pathData.path) {
+    if (pathData && pathData.path && Array.isArray(pathData.path)) {
       console.log('PathMap component received pathData:', pathData);
+      console.log('PathMap: isSpaceNavPath:', !!isSpaceNavPath);
+      if (!isSpaceNavPath) {
       console.log('PathMap: Checking waypoints in path segments:');
       pathData.path.forEach((step, idx) => {
         if (step.routeWaypoints) {
@@ -31,7 +33,8 @@ const PathMap = ({ pathData, onClose, language }) => {
         }
       });
     }
-  }, [pathData]);
+    }
+  }, [pathData, isSpaceNavPath]);
 
   // Animate path on load
   useEffect(() => {
@@ -62,15 +65,22 @@ const PathMap = ({ pathData, onClose, language }) => {
       const response = await axios.get(`${API_BASE_URL}/pathfinder/floor-plans`);
       setFloorPlanData(response.data);
       
-      // Get the starting floor
-      const startFloor = pathData.from.floor;
+      // Get the starting floor - handle both old and new data structures
+      const startFloor = pathData?.from?.floor ?? pathData?.path?.[0]?.floor ?? 1;
       console.log('PathMap: Starting floor:', startFloor);
       const floorInfo = response.data.floors.find(f => f.floor === startFloor);
       if (floorInfo) {
         console.log('PathMap: Found floor plan image:', floorInfo.image.url);
         setCurrentFloorImage(floorInfo.image.url);
       } else {
-        console.warn('PathMap: Floor plan not found for floor:', startFloor);
+        // Fallback to floor 1 if specific floor not found
+        const fallbackFloor = response.data.floors.find(f => f.floor === 1) || response.data.floors[0];
+        if (fallbackFloor) {
+          console.log('PathMap: Using fallback floor plan:', fallbackFloor.image.url);
+          setCurrentFloorImage(fallbackFloor.image.url);
+        } else {
+          console.warn('PathMap: No floor plan found');
+        }
       }
     } catch (error) {
       console.error('PathMap: Error loading floor plan data:', error);
@@ -78,7 +88,7 @@ const PathMap = ({ pathData, onClose, language }) => {
   };
 
   useEffect(() => {
-    if (pathData && pathData.path && pathData.path.length > 0) {
+    if (pathData && pathData.path && Array.isArray(pathData.path) && pathData.path.length > 0) {
       console.log('PathMap: Loading floor plan data for path:', pathData);
       loadFloorPlanData();
     }
@@ -274,18 +284,19 @@ const PathMap = ({ pathData, onClose, language }) => {
           style={{ transition: 'stroke-dashoffset 0.1s linear' }}
         />
         
-        {/* Direction arrows along path */}
-        {pathAnimationProgress >= 50 && arrows.map((arrow, idx) => (
+        {/* Direction arrows along path - sparse and subtle */}
+        {pathAnimationProgress >= 50 && arrows.slice(0, Math.min(arrows.length, 20)).map((arrow, idx) => (
           <g 
             key={`arrow-${idx}`}
             transform={`translate(${arrow.x}, ${arrow.y}) rotate(${arrow.rotation})`}
-            opacity={Math.min(1, (pathAnimationProgress - 50) / 25)}
+            opacity={Math.min(0.6, (pathAnimationProgress - 50) / 25)} // More subtle opacity
           >
             <path
-              d={arrow.path || 'M -8 -6 L 0 0 L -8 6 Z'}
+              d={arrow.path || 'M -6 -4 L 0 0 L -6 4 Z'} // Smaller arrows
               fill="#00c896"
               stroke="white"
-              strokeWidth="1"
+              strokeWidth="0.5"
+              opacity="0.7"
             />
           </g>
         ))}
@@ -377,19 +388,21 @@ const PathMap = ({ pathData, onClose, language }) => {
 
   // Update floor image - show destination floor (or most common floor in path)
   useEffect(() => {
-    if (pathData && pathData.path && pathData.path.length > 0 && floorPlanData) {
-      const destinationFloor = pathData.to.floor;
-      const startFloor = pathData.from.floor;
+    if (pathData && pathData.path && Array.isArray(pathData.path) && pathData.path.length > 0 && floorPlanData) {
+      // Handle both old and new data structures - with safe access
+      const destinationFloor = pathData?.to?.floor ?? pathData?.destination?.floor ?? pathData?.path?.[pathData.path.length - 1]?.floor ?? 1;
+      const startFloor = pathData?.from?.floor ?? pathData?.path?.[0]?.floor ?? 1;
       
       // Count floors in path to see which floor has most steps
       const floorCounts = {};
       pathData.path.forEach(step => {
-        floorCounts[step.floor] = (floorCounts[step.floor] || 0) + 1;
+        const stepFloor = step.floor ?? 1;
+        floorCounts[stepFloor] = (floorCounts[stepFloor] || 0) + 1;
       });
       
       // Choose floor: destination if path ends there, otherwise most common floor
       let displayFloor = destinationFloor;
-      if (floorCounts[startFloor] > floorCounts[destinationFloor] && pathData.path.length > 2) {
+      if (floorCounts[startFloor] > (floorCounts[destinationFloor] || 0) && pathData.path.length > 2) {
         displayFloor = startFloor;
       }
       
@@ -399,11 +412,11 @@ const PathMap = ({ pathData, onClose, language }) => {
         console.log('PathMap: Found floor plan image:', floorInfo.image.url);
         setCurrentFloorImage(floorInfo.image.url);
       } else {
-        // Fallback to start floor
-        const startFloorInfo = floorPlanData.floors.find(f => f.floor === startFloor);
-        if (startFloorInfo) {
-          console.log('PathMap: Using start floor as fallback:', startFloorInfo.image.url);
-          setCurrentFloorImage(startFloorInfo.image.url);
+        // Fallback to floor 1 or first available floor
+        const fallbackFloor = floorPlanData.floors.find(f => f.floor === 1) || floorPlanData.floors[0];
+        if (fallbackFloor) {
+          console.log('PathMap: Using fallback floor:', fallbackFloor.image.url);
+          setCurrentFloorImage(fallbackFloor.image.url);
         }
       }
     }
@@ -424,6 +437,8 @@ const PathMap = ({ pathData, onClose, language }) => {
 
   const formatNodeName = (node) => {
     if (!node) return '';
+    // Handle case where node is a string (from space navigation)
+    if (typeof node === 'string') return node;
     if (node.displayName) return node.displayName;
     const source = node.name || node.id || '';
     const trimmed = source.replace(/^hsitp_/i, '');

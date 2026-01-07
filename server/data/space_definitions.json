@@ -43,193 +43,64 @@
         ]
       ],
       "type": "corridor"
-    },
-    {
-      "id": "corridor_1765941447326",
-      "name": "Corridor 2",
-      "floor": 1,
-      "polygon": [
-        [
-          475,
-          850
-        ],
-        [
-          475,
-          1100
-        ],
-        [
-          550,
-          1100
-        ],
-        [
-          550,
-          850
-        ],
-        [
-          475,
-          850
-        ]
-      ],
-      "type": "corridor"
-    },
-    {
-      "id": "corridor_1765941747483",
-      "name": "Corridor 3",
-      "floor": 1,
-      "polygon": [
-        [
-          2075,
-          800
-        ],
-        [
-          2350,
-          800
-        ],
-        [
-          2350,
-          875
-        ],
-        [
-          2150,
-          875
-        ],
-        [
-          2150,
-          1150
-        ],
-        [
-          2075,
-          1150
-        ],
-        [
-          2075,
-          800
-        ]
-      ],
-      "type": "corridor"
-    },
-    {
-      "id": "corridor_1765942677771",
-      "name": "Corridor 4",
-      "floor": 1,
-      "polygon": [
-        [
-          2100,
-          400
-        ],
-        [
-          2100,
-          775
-        ],
-        [
-          2150,
-          775
-        ],
-        [
-          2150,
-          400
-        ],
-        [
-          2100,
-          400
-        ]
-      ],
-      "type": "corridor"
-    },
-    {
-      "id": "corridor_1765942710213",
-      "name": "Corridor 5",
-      "floor": 1,
-      "polygon": [
-        [
-          2175,
-          1000
-        ],
-        [
-          2375,
-          1000
-        ],
-        [
-          2375,
-          1050
-        ],
-        [
-          2175,
-          1050
-        ],
-        [
-          2175,
-          1000
-        ]
-      ],
-      "type": "corridor"
     }
   ],
   "destinations": [
     {
-      "id": "dest_1765941778921",
-      "name": "Exit 1",
-      "zone": "",
+      "id": "dest_main_entrance",
+      "name": "Main Entrance",
+      "zone": "entrance",
+      "floor": 1,
+      "x": 550,
+      "y": 700,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone02",
+      "name": "Zone 02 Exit",
+      "zone": "zone_02",
       "floor": 1,
       "x": 500,
       "y": 650,
-      "facing": "south"
+      "facing": "north"
     },
     {
-      "id": "dest_1765941782782",
-      "name": "Exit 2",
-      "zone": "",
+      "id": "dest_zone03",
+      "name": "Zone 03 Exit",
+      "zone": "zone_03",
       "floor": 1,
       "x": 475,
       "y": 700,
-      "facing": "south"
+      "facing": "west"
     },
     {
-      "id": "dest_1765941786478",
-      "name": "Exit 3",
-      "zone": "",
-      "floor": 1,
-      "x": 475,
-      "y": 700,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1765941805982",
-      "name": "Exit 4",
-      "zone": "",
-      "floor": 1,
-      "x": 475,
-      "y": 800,
-      "facing": "east"
-    },
-    {
-      "id": "dest_1765941824436",
-      "name": "Exit 5",
-      "zone": "",
-      "floor": 1,
-      "x": 525,
-      "y": 825,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1765941831080",
-      "name": "Exit 6",
-      "zone": "",
-      "floor": 1,
-      "x": 500,
-      "y": 1100,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1765941837175",
-      "name": "Exit 7",
-      "zone": "",
+      "id": "dest_zone06",
+      "name": "Zone 06 Exit",
+      "zone": "zone_06",
       "floor": 1,
       "x": 800,
+      "y": 850,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone01",
+      "name": "Zone 01 Exit",
+      "zone": "zone_01",
+      "floor": 1,
+      "x": 1200,
+      "y": 800,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone07",
+      "name": "Zone 07 Exit",
+      "zone": "zone_07",
+      "floor": 1,
+      "x": 1600,
       "y": 850,
       "facing": "south"
     }
   ],
   "gridSize": 25,
-  "updatedAt": "2025-12-31T03:38:56.690Z"
+  "savedAt": "2026-01-02T08:04:11.750Z"
 }
