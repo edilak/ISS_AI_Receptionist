@@ -278,14 +278,18 @@ class ContinuousSpaceRLAgent {
 
                     let maxVal = -100000;
 
-                    // Wall proximity penalty (Center-Line Preference)
-                    // Clearance is distance to nearest wall (in grid cells)
-                    // Penalty decreases as clearance increases
+                    // Wall proximity penalty (Threshold / Plateau approach)
+                    // If we are "safe" (clearance > threshold), no penalty -> standard Shortest Path
+                    // If we are close to wall, huge penalty.
+                    // This creates a "highway" in the middle of corridors where the agent can take straight lines.
                     const clearance = this.clearanceMap[idx];
-                    // Example penalty: 0 at clearance > 5, ramping up as clearance approaches 0
-                    // But we want a continuous gradient to the center.
-                    // Simple gradient: cost multiplier = 1 + (10 / (clearance + 1))
-                    const wallPenalty = 5 / (clearance + 0.5);
+                    const SAFE_DISTANCE = 3; // ~60px
+
+                    let wallPenalty = 0;
+                    if (clearance < SAFE_DISTANCE) {
+                        // Exponential penalty for getting too close to walls
+                        wallPenalty = Math.pow(SAFE_DISTANCE - clearance, 2) * 5;
+                    }
 
                     // Check all neighbors
                     for (const n of neighbors) {

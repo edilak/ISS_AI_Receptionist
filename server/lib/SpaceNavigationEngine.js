@@ -599,7 +599,7 @@ class SpaceNavigationEngine {
       }
 
       // Simplify path (remove redundant points) - more aggressive simplification
-      const simplifiedPath = this.simplifyPath(result.path, 15); // Increased tolerance from 5 to 15
+      const simplifiedPath = this.simplifyPath(result.path, 25); // Increased tolerance (15 -> 25) for straighter lines
 
       // Enrich path with corridor names (Stable Logic)
       let lastKnownLocation = 'Start';

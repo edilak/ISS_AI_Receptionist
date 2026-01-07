@@ -287,11 +287,19 @@ const getSegmentDirection = (p1, p2) => {
   }
 };
 
+const calculateTurn = (p1, p2, p3) => {
+  const v1 = { x: p2.x - p1.x, y: p2.y - p1.y };
+  const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
+  const cross = v1.x * v2.y - v1.y * v2.x; // 2D cross product, Y-down
+
+  // Tolerance for "Straight"
+  if (Math.abs(cross) < 100) return 'straight';
+  return cross > 0 ? 'right' : 'left';
+};
+
 const buildStepSummary = (steps = []) => {
   if (steps.length < 2) return 'You are already there.';
 
-  // Refined Strategy:
-  // Identify key turning points or corridor changes
   const segments = [];
   let currentSegment = {
     name: steps[0].locationName || 'Start',
@@ -301,7 +309,6 @@ const buildStepSummary = (steps = []) => {
 
   for (let i = 1; i < steps.length; i++) {
     const pt = steps[i];
-    // Use tolerance to keep segments together if name splits momentarily
     const name = pt.locationName || currentSegment.name;
 
     if (name !== currentSegment.name) {
@@ -309,7 +316,6 @@ const buildStepSummary = (steps = []) => {
       if (currentSegment.start !== currentSegment.end) {
         segments.push(currentSegment);
       }
-      // Start new segment
       currentSegment = {
         name: name,
         start: steps[i - 1],
@@ -321,34 +327,36 @@ const buildStepSummary = (steps = []) => {
   }
   segments.push(currentSegment);
 
-  // Convert segments to natural text with screen-relative directions
   return segments.map((seg, idx) => {
     const isLast = idx === segments.length - 1;
     const locName = formatNodeLabel({ name: seg.name }).replace(/_/g, ' ');
 
-    if (idx === 0) return `Start at ${locName}.`;
-
-    // Determine direction of the CURRENT segment
-    const dir = getSegmentDirection(seg.start, seg.end);
-    let action = 'Head';
-
-    if (idx > 0) {
-      // Determine relative turn based on absolute direction (Screen Relative)
-      // This matches user expectation for 2D maps better than egocentric turns
+    if (idx === 0) {
+      // First instruction: Absolute direction
+      const dir = getSegmentDirection(seg.start, seg.end);
+      let action = 'Head';
       switch (dir) {
-        case 'East': action = 'Turn right'; break;
-        case 'West': action = 'Turn left'; break;
+        case 'East': action = 'Head right'; break;
+        case 'West': action = 'Head left'; break;
         case 'North': action = 'Head up'; break;
         case 'South': action = 'Head down'; break;
       }
-
-      // If we are continuing in the same named area
-      const prevSeg = segments[idx - 1];
-      if (prevSeg.name === seg.name) return `Continue ${action.toLowerCase().replace('turn ', '')} along ${locName}.`;
+      return `Start at ${locName} and ${action.toLowerCase()}.`;
     }
 
-    if (isLast) return `${action} into ${locName} and arrive at destination.`;
+    // Subsequent instructions: Relative turns
+    const prevSeg = segments[idx - 1];
+    const turn = calculateTurn(prevSeg.start, prevSeg.end, seg.end);
 
+    // Continue
+    if (prevSeg.name === seg.name) {
+      return `Continue along ${locName}.`;
+    }
+
+    // Turn
+    let action = turn === 'straight' ? 'Go straight' : `Turn ${turn}`;
+
+    if (isLast) return `${action} into ${locName} and arrive at destination.`;
     return `${action} into ${locName}.`;
   }).join(' ');
 };
