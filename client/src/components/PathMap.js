@@ -14,7 +14,7 @@ const PathMap = ({ pathData, onClose, language }) => {
   const [imageScaleFactors, setImageScaleFactors] = useState(null);
   const [svgViewBox, setSvgViewBox] = useState('0 0 1200 900');
   const imageRef = useRef(null);
-  
+
   // Check if this is space navigation data (has svgPath from RL system)
   const isSpaceNavPath = pathData?.visualization?.svgPath || pathData?.path?.svgPath;
 
@@ -24,15 +24,15 @@ const PathMap = ({ pathData, onClose, language }) => {
       console.log('PathMap component received pathData:', pathData);
       console.log('PathMap: isSpaceNavPath:', !!isSpaceNavPath);
       if (!isSpaceNavPath) {
-      console.log('PathMap: Checking waypoints in path segments:');
-      pathData.path.forEach((step, idx) => {
-        if (step.routeWaypoints) {
-          console.log(`  Step ${idx+1} (${step.id}): ${step.routeWaypoints.length} waypoints`, step.routeWaypoints);
-        } else {
-          console.log(`  Step ${idx+1} (${step.id}): NO routeWaypoints property`);
-        }
-      });
-    }
+        console.log('PathMap: Checking waypoints in path segments:');
+        pathData.path.forEach((step, idx) => {
+          if (step.routeWaypoints) {
+            console.log(`  Step ${idx + 1} (${step.id}): ${step.routeWaypoints.length} waypoints`, step.routeWaypoints);
+          } else {
+            console.log(`  Step ${idx + 1} (${step.id}): NO routeWaypoints property`);
+          }
+        });
+      }
     }
   }, [pathData, isSpaceNavPath]);
 
@@ -44,7 +44,7 @@ const PathMap = ({ pathData, onClose, language }) => {
       const steps = 60;
       const increment = 100 / steps;
       let current = 0;
-      
+
       const interval = setInterval(() => {
         current += increment;
         if (current >= 100) {
@@ -64,7 +64,7 @@ const PathMap = ({ pathData, onClose, language }) => {
       console.log('PathMap: Fetching floor plan data...');
       const response = await axios.get(`${API_BASE_URL}/pathfinder/floor-plans`);
       setFloorPlanData(response.data);
-      
+
       // Get the starting floor - handle both old and new data structures
       const startFloor = pathData?.from?.floor ?? pathData?.path?.[0]?.floor ?? 1;
       console.log('PathMap: Starting floor:', startFloor);
@@ -101,18 +101,18 @@ const PathMap = ({ pathData, onClose, language }) => {
       if (imageRef.current && imageRef.current.complete) {
         const scaleFactors = getImageScaleFactors(imageRef.current);
         setImageScaleFactors(scaleFactors);
-        
+
         // Update SVG viewBox based on actual image dimensions
         const viewBox = calculateViewBox(scaleFactors.naturalWidth, scaleFactors.naturalHeight);
         setSvgViewBox(viewBox);
-        
+
         console.log('PathMap: Image scale factors updated:', scaleFactors);
         console.log('PathMap: SVG viewBox:', viewBox);
       }
     };
 
     updateScaleFactors();
-    
+
     // Update on window resize
     window.addEventListener('resize', updateScaleFactors);
     return () => window.removeEventListener('resize', updateScaleFactors);
@@ -133,7 +133,7 @@ const PathMap = ({ pathData, onClose, language }) => {
       console.warn(`getNodeCoordinates: Node ${nodeId} not found on floor ${floorNumber}. Available nodes:`, floorInfo.nodes.map(n => n.id));
       return null;
     }
-    
+
     // Use pixel coordinates directly - SVG viewBox will handle scaling
     // If we have scale factors, we can transform, but for now use direct pixel coords
     // since viewBox handles the scaling automatically
@@ -143,16 +143,16 @@ const PathMap = ({ pathData, onClose, language }) => {
   // Get waypoints for a path segment between two nodes
   const getWaypoints = (fromNodeId, toNodeId, floorNumber) => {
     if (!floorPlanData) return [];
-    
+
     const floorInfo = floorPlanData.floors.find(f => f.floor === floorNumber);
     if (!floorInfo || !floorInfo.paths) return [];
-    
+
     // Find path definition that matches this segment
-    const pathDef = floorInfo.paths.find(p => 
+    const pathDef = floorInfo.paths.find(p =>
       (p.from === fromNodeId && p.to === toNodeId) ||
       (p.from === toNodeId && p.to === fromNodeId)
     );
-    
+
     return pathDef?.waypoints || [];
   };
 
@@ -161,73 +161,73 @@ const PathMap = ({ pathData, onClose, language }) => {
   const createPathPoints = (start, end, waypoints = []) => {
     // If waypoints include anchors (isAnchor flag), they already have start/end points
     const hasAnchors = waypoints.length > 0 && waypoints.some(wp => wp.isAnchor);
-    
+
     if (hasAnchors) {
       // Anchor-aware waypoints: [exitAnchor, ...corridorWaypoints, entryAnchor]
       // Use the anchors as start/end points instead of node centers
-      return waypoints.map(wp => ({ 
-        x: wp.pixelX, 
+      return waypoints.map(wp => ({
+        x: wp.pixelX,
         y: wp.pixelY,
-        isAnchor: wp.isAnchor 
+        isAnchor: wp.isAnchor
       }));
     }
-    
+
     // Legacy waypoints: just corridor points, need start/end
     const points = [start];
-    
+
     // Add waypoints
     waypoints.forEach(wp => {
       points.push({ x: wp.pixelX, y: wp.pixelY });
     });
-    
+
     // Add end point
     points.push(end);
-    
+
     return points;
   };
 
   // Generate smooth SVG path string using Bezier curves
-  const generatePathString = (points, smooth = true) => {
+  const generatePathString = (points, smooth = false) => {
     if (points.length === 0) return '';
     if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
     if (points.length === 2) {
       return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
     }
-    
+
     if (!smooth) {
       // Legacy straight lines
-    return points.map((point, index) => 
-      index === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
-    ).join(' ');
+      return points.map((point, index) =>
+        index === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
+      ).join(' ');
     }
-    
+
     // Generate smooth Bezier curve through all points
     let path = `M ${points[0].x} ${points[0].y}`;
-    
+
     for (let i = 0; i < points.length - 1; i++) {
       const p0 = points[Math.max(0, i - 1)];
       const p1 = points[i];
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
-      
+
       // Catmull-Rom to Bezier conversion for smooth curves
       const tension = 0.3;
-      
+
       // Control point 1
       const cp1x = p1.x + (p2.x - p0.x) * tension;
       const cp1y = p1.y + (p2.y - p0.y) * tension;
-      
+
       // Control point 2
       const cp2x = p2.x - (p3.x - p1.x) * tension;
       const cp2y = p2.y - (p3.y - p1.y) * tension;
-      
+
       // Add cubic Bezier curve
       path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
     }
-    
+
     return path;
   };
-  
+
   // Calculate path length for animation
   const calculatePathLength = (points) => {
     let length = 0;
@@ -242,20 +242,20 @@ const PathMap = ({ pathData, onClose, language }) => {
   // Render space navigation path (from RL system)
   const renderSpaceNavPath = () => {
     if (!isSpaceNavPath) return null;
-    
+
     const svgPath = pathData.visualization?.svgPath || pathData.path?.svgPath;
     const arrows = pathData.visualization?.arrows || [];
     const animation = pathData.visualization?.animation || {};
     const destination = pathData.destination || {};
-    
+
     // Get start position from smoothPath or first point
     const smoothPath = pathData.path?.smoothPath || [];
     const startPoint = smoothPath[0] || { x: 0, y: 0 };
     const endPoint = smoothPath[smoothPath.length - 1] || destination;
-    
+
     const pathLength = animation.totalLength || 1000;
     const animatedDashOffset = pathLength * (1 - pathAnimationProgress / 100);
-    
+
     return (
       <g className="space-nav-path">
         {/* Background glow path */}
@@ -268,7 +268,7 @@ const PathMap = ({ pathData, onClose, language }) => {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        
+
         {/* Main animated path */}
         <path
           d={svgPath}
@@ -283,24 +283,24 @@ const PathMap = ({ pathData, onClose, language }) => {
           className="space-nav-line"
           style={{ transition: 'stroke-dashoffset 0.1s linear' }}
         />
-        
+
         {/* Direction arrows along path - sparse and subtle */}
-        {pathAnimationProgress >= 50 && arrows.slice(0, Math.min(arrows.length, 20)).map((arrow, idx) => (
-          <g 
+        {/* Direction arrows along path */}
+        {arrows.map((arrow, idx) => (
+          <g
             key={`arrow-${idx}`}
             transform={`translate(${arrow.x}, ${arrow.y}) rotate(${arrow.rotation})`}
-            opacity={Math.min(0.6, (pathAnimationProgress - 50) / 25)} // More subtle opacity
           >
             <path
-              d={arrow.path || 'M -6 -4 L 0 0 L -6 4 Z'} // Smaller arrows
+              d={arrow.path || 'M -6 -4 L 0 0 L -6 4 Z'} // Standard arrow size
               fill="#00c896"
               stroke="white"
               strokeWidth="0.5"
-              opacity="0.7"
+              opacity="1"
             />
           </g>
         ))}
-        
+
         {/* Start marker */}
         <g className="start-marker">
           <circle
@@ -329,10 +329,10 @@ const PathMap = ({ pathData, onClose, language }) => {
             S
           </text>
         </g>
-        
+
         {/* End marker */}
         {pathAnimationProgress >= 80 && (
-          <g 
+          <g
             className="end-marker"
             opacity={(pathAnimationProgress - 80) / 20}
           >
@@ -392,20 +392,20 @@ const PathMap = ({ pathData, onClose, language }) => {
       // Handle both old and new data structures - with safe access
       const destinationFloor = pathData?.to?.floor ?? pathData?.destination?.floor ?? pathData?.path?.[pathData.path.length - 1]?.floor ?? 1;
       const startFloor = pathData?.from?.floor ?? pathData?.path?.[0]?.floor ?? 1;
-      
+
       // Count floors in path to see which floor has most steps
       const floorCounts = {};
       pathData.path.forEach(step => {
         const stepFloor = step.floor ?? 1;
         floorCounts[stepFloor] = (floorCounts[stepFloor] || 0) + 1;
       });
-      
+
       // Choose floor: destination if path ends there, otherwise most common floor
       let displayFloor = destinationFloor;
       if (floorCounts[startFloor] > (floorCounts[destinationFloor] || 0) && pathData.path.length > 2) {
         displayFloor = startFloor;
       }
-      
+
       console.log('PathMap: Display floor:', displayFloor, '(Destination:', destinationFloor, ', Start:', startFloor, ')');
       const floorInfo = floorPlanData.floors.find(f => f.floor === displayFloor);
       if (floorInfo) {
@@ -489,14 +489,14 @@ const PathMap = ({ pathData, onClose, language }) => {
     if (isFloorChange) {
       return language === 'en' ? 'Take elevator/stairs' : language === 'zh-HK' ? '乘搭電梯/樓梯' : '乘搭电梯/楼梯';
     }
-    
+
     const directions = {
       'right': language === 'en' ? 'Turn right' : language === 'zh-HK' ? '向右轉' : '向右转',
       'left': language === 'en' ? 'Turn left' : language === 'zh-HK' ? '向左轉' : '向左转',
       'up': language === 'en' ? 'Go straight' : language === 'zh-HK' ? '直行' : '直行',
       'down': language === 'en' ? 'Go straight' : language === 'zh-HK' ? '直行' : '直行',
     };
-    
+
     return directions[direction] || directions['up'];
   };
 
@@ -524,7 +524,7 @@ const PathMap = ({ pathData, onClose, language }) => {
     console.log("PathMap: Not rendering - missing pathData or path:", { pathData, hasPath: pathData?.path?.length });
     return null;
   }
-  
+
   if (!floorPlanData) {
     console.log("PathMap: Waiting for floorPlanData to load...");
     return (
@@ -535,12 +535,12 @@ const PathMap = ({ pathData, onClose, language }) => {
       </div>
     );
   }
-  
+
   console.log("PathMap: Rendering with pathData:", pathData, "floorPlanData:", floorPlanData);
 
   // Get unique floors in the path
-  const floorsInPath = pathData && pathData.path ? 
-    [...new Set(pathData.path.map(step => step.floor).filter(f => f !== undefined && f !== null))].sort((a, b) => a - b) : 
+  const floorsInPath = pathData && pathData.path ?
+    [...new Set(pathData.path.map(step => step.floor).filter(f => f !== undefined && f !== null))].sort((a, b) => a - b) :
     [];
 
   // Get current display floor
@@ -561,8 +561,8 @@ const PathMap = ({ pathData, onClose, language }) => {
       const step = pathData.path[i];
       const nextStep = pathData.path[i + 1];
       // Include segment if either node is on this floor, or if it's a floor change segment
-      if (step.floor === floor || nextStep.floor === floor || 
-          (step.isFloorChange && (step.floor === floor || nextStep.floor === floor))) {
+      if (step.floor === floor || nextStep.floor === floor ||
+        (step.isFloorChange && (step.floor === floor || nextStep.floor === floor))) {
         segments.push({ from: step, to: nextStep, index: i });
       }
     }
@@ -576,11 +576,11 @@ const PathMap = ({ pathData, onClose, language }) => {
       <div className="path-map-header">
         <div className="path-map-title">
           <h3>
-            {language === 'en' 
-              ? 'Route Guidance' 
-              : language === 'zh-HK' 
-              ? '路線指引' 
-              : '路线指引'}
+            {language === 'en'
+              ? 'Route Guidance'
+              : language === 'zh-HK'
+                ? '路線指引'
+                : '路线指引'}
           </h3>
           <div className="path-time">
             {formatTime(pathData.estimatedTime)}
@@ -618,7 +618,7 @@ const PathMap = ({ pathData, onClose, language }) => {
         )}
         <button className="close-button" onClick={onClose}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
       </div>
@@ -645,10 +645,10 @@ const PathMap = ({ pathData, onClose, language }) => {
         <div className="path-visualization">
           {currentFloorImage ? (
             <div className="floor-plan-container">
-              <img 
+              <img
                 ref={imageRef}
-                src={currentFloorImage} 
-                alt="Floor Plan" 
+                src={currentFloorImage}
+                alt="Floor Plan"
                 className="floor-plan-image"
                 onLoad={(e) => {
                   console.log('Floor plan image loaded:', currentFloorImage);
@@ -656,27 +656,27 @@ const PathMap = ({ pathData, onClose, language }) => {
                   const img = e.target;
                   const scaleFactors = getImageScaleFactors(img);
                   setImageScaleFactors(scaleFactors);
-                  
+
                   // Get actual image dimensions from floor plan data or image
                   const floorInfo = floorPlanData?.floors?.find(f => {
                     const imgUrl = f.image?.url || '';
                     return currentFloorImage.includes(imgUrl.split('/').pop());
                   });
-                  
+
                   const imgWidth = img.naturalWidth || img.width || (floorInfo?.image?.width || 1200);
                   const imgHeight = img.naturalHeight || img.height || (floorInfo?.image?.height || 900);
-                  
+
                   const viewBox = calculateViewBox(imgWidth, imgHeight);
                   setSvgViewBox(viewBox);
                   console.log('PathMap: Image dimensions:', { imgWidth, imgHeight, viewBox });
                 }}
                 onError={(e) => console.error('Error loading floor plan image:', e)}
               />
-              <svg 
-                className="path-overlay" 
+              <svg
+                className="path-overlay"
                 viewBox={svgViewBox}
                 preserveAspectRatio="xMidYMid meet"
-                style={{ 
+                style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -691,32 +691,32 @@ const PathMap = ({ pathData, onClose, language }) => {
                     <stop offset="50%" stopColor="#764ba2" stopOpacity="0.9" />
                     <stop offset="100%" stopColor="#667eea" stopOpacity="0.8" />
                   </linearGradient>
-                  
+
                   {/* Gradient for space nav path */}
                   <linearGradient id="spaceNavGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#00c896" stopOpacity="0.9" />
                     <stop offset="50%" stopColor="#00e5a0" stopOpacity="1" />
                     <stop offset="100%" stopColor="#00c896" stopOpacity="0.9" />
                   </linearGradient>
-                  
+
                   {/* Glow filter for path */}
                   <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                     <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
                     </feMerge>
                   </filter>
-                  
+
                   {/* Glow filter for space nav path */}
                   <filter id="spaceNavGlow">
-                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
                     <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
                     </feMerge>
                   </filter>
-                  
+
                   {/* Arrow marker */}
                   <marker
                     id="arrowhead"
@@ -729,7 +729,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                   >
                     <path d="M0,0 L0,6 L10,3 z" fill="#667eea" />
                   </marker>
-                  
+
                   {/* Animated arrow marker */}
                   <marker
                     id="arrowheadAnimated"
@@ -745,10 +745,10 @@ const PathMap = ({ pathData, onClose, language }) => {
                     </path>
                   </marker>
                 </defs>
-                
+
                 {/* Space navigation path (from RL system) */}
                 {isSpaceNavPath && renderSpaceNavPath()}
-                
+
                 {/* Path lines with animation - only show segments on current display floor */}
                 {!isSpaceNavPath && pathData.path.map((step, index) => {
                   // Only render nodes and segments on the current display floor
@@ -760,7 +760,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                       return null;
                     }
                   }
-                  
+
                   const coords = getNodeCoordinates(step.id, step.floor);
                   if (!coords) {
                     console.warn(`No coordinates found for ${step.id} on floor ${step.floor}`);
@@ -768,14 +768,14 @@ const PathMap = ({ pathData, onClose, language }) => {
                   }
 
                   const nodeLabel = formatNodeName(step);
-                  
+
                   const isStart = index === 0;
                   const isEnd = index === pathData.path.length - 1;
                   const progress = pathAnimationProgress;
                   const segmentProgress = (index / pathData.path.length) * 100;
                   const shouldShow = segmentProgress <= progress;
                   const opacity = shouldShow ? 1 : 0;
-                  
+
                   return (
                     <g key={`${step.id}-${index}`} opacity={opacity} style={{ transition: 'opacity 0.3s ease' }}>
                       {/* Path line to next node - only if segment is on the display floor */}
@@ -783,56 +783,56 @@ const PathMap = ({ pathData, onClose, language }) => {
                         const nextStep = pathData.path[index + 1];
                         const nextNodeId = nextStep.id;
                         const nextFloorNumber = nextStep.floor;
-                        
+
                         // Only show segment if it's on the display floor
                         // (either both nodes are on display floor, or it's a floor change to/from display floor)
-                        const segmentOnDisplayFloor = 
+                        const segmentOnDisplayFloor =
                           (step.floor === displayFloor && nextFloorNumber === displayFloor) ||
                           (step.floor === displayFloor && nextStep.isFloorChange) ||
                           (nextFloorNumber === displayFloor && step.isFloorChange);
-                        
+
                         if (!segmentOnDisplayFloor) {
                           return null;
                         }
-                        
+
                         if (!nextNodeId || nextFloorNumber === undefined) {
                           return null;
                         }
-                        
+
                         const nextCoords = getNodeCoordinates(nextNodeId, nextFloorNumber);
                         if (!nextCoords) {
                           console.warn(`PathMap: No coordinates for next step ${nextNodeId} on floor ${nextFloorNumber}`);
                           return null;
                         }
-                        
+
                         const isFloorChange = step.isFloorChange || (step.floor !== nextFloorNumber);
                         // Show line if segment is on the display floor
                         // (either both nodes are on display floor, or it's a floor change to/from display floor)
-                        const showLine = 
+                        const showLine =
                           (step.floor === displayFloor && nextFloorNumber === displayFloor) ||
                           (step.floor === displayFloor && isFloorChange) ||
                           (nextFloorNumber === displayFloor && isFloorChange);
-                        
+
                         if (!showLine) {
                           return null;
                         }
-                        
+
                         // Use waypoints from path data (if provided by backend) or fallback to lookup
                         const waypoints = step.routeWaypoints || getWaypoints(step.id, nextNodeId, step.floor);
-                        
+
                         // Debug logging
                         if (waypoints && waypoints.length > 0) {
                           console.log(`PathMap: Using ${waypoints.length} waypoints for ${step.id} → ${nextNodeId}`);
                         } else {
                           console.warn(`PathMap: No waypoints found for ${step.id} → ${nextNodeId}, using straight line`);
                         }
-                        
+
                         const pathPoints = createPathPoints(coords, nextCoords, waypoints);
                         const pathString = generatePathString(pathPoints);
-                        
+
                         // Use polyline if we have waypoints, otherwise use straight line
                         const usePolyline = waypoints && waypoints.length > 0;
-                        
+
                         return (
                           <>
                             {/* Shadow/glow line */}
@@ -861,7 +861,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                                 markerEnd={isFloorChange ? "url(#arrowheadAnimated)" : "url(#arrowhead)"}
                               />
                             )}
-                            
+
                             {/* Main path line */}
                             {usePolyline ? (
                               <path
@@ -894,10 +894,10 @@ const PathMap = ({ pathData, onClose, language }) => {
                           </>
                         );
                       })()}
-                      
+
                       {/* Node marker with hover effect - only show if on display floor */}
                       {isOnDisplayFloor && (
-                        <g 
+                        <g
                           onMouseEnter={() => setHoveredNode(step.id)}
                           onMouseLeave={() => setHoveredNode(null)}
                           style={{ cursor: 'pointer' }}
@@ -913,7 +913,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                               className="marker-glow"
                             />
                           )}
-                          
+
                           {/* Main marker circle */}
                           <circle
                             cx={coords.x}
@@ -928,7 +928,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                               filter: hoveredNode === step.id ? 'url(#glow)' : 'none'
                             }}
                           />
-                          
+
                           {/* Icon/Text inside marker */}
                           {(isStart || isEnd) ? (
                             <text
@@ -951,7 +951,7 @@ const PathMap = ({ pathData, onClose, language }) => {
                               pointerEvents="none"
                             />
                           )}
-                          
+
                           {/* Hover tooltip */}
                           {hoveredNode === step.id && (
                             <g>
@@ -984,11 +984,11 @@ const PathMap = ({ pathData, onClose, language }) => {
                                   fontSize="10"
                                   pointerEvents="none"
                                 >
-                                  {language === 'en' 
-                                    ? `Floor ${step.floor}` 
-                                    : language === 'zh-HK' 
-                                    ? `第 ${step.floor} 層` 
-                                    : `第 ${step.floor} 层`}
+                                  {language === 'en'
+                                    ? `Floor ${step.floor}`
+                                    : language === 'zh-HK'
+                                      ? `第 ${step.floor} 層`
+                                      : `第 ${step.floor} 层`}
                                 </text>
                               )}
                             </g>
@@ -1020,11 +1020,11 @@ const PathMap = ({ pathData, onClose, language }) => {
                     )}
                     {step.isFloorChange && (
                       <div className="floor-change">
-                        {language === 'en' 
-                          ? `Floor ${step.floor}` 
-                          : language === 'zh-HK' 
-                          ? `第 ${step.floor} 層` 
-                          : `第 ${step.floor} 层`}
+                        {language === 'en'
+                          ? `Floor ${step.floor}`
+                          : language === 'zh-HK'
+                            ? `第 ${step.floor} 層`
+                            : `第 ${step.floor} 层`}
                       </div>
                     )}
                   </div>
@@ -1039,6 +1039,7 @@ const PathMap = ({ pathData, onClose, language }) => {
           )}
         </div>
 
+        {/* Step-by-step instructions removed as per request
         <div className="path-instructions">
           <h4>
             {language === 'en' 
@@ -1060,6 +1061,7 @@ const PathMap = ({ pathData, onClose, language }) => {
             })}
           </ol>
         </div>
+        */}
       </div>
     </div>
   );

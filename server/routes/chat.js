@@ -33,7 +33,7 @@ const openai = (azureApiKey && azureEndpoint) ? (() => {
   // Normalize endpoint (ensure no trailing slash, then add deployment path)
   const normalizedEndpoint = azureEndpoint.replace(/\/$/, '');
   const baseURL = `${normalizedEndpoint}/openai/deployments/${azureDeploymentName}`;
-  
+
   return new OpenAI({
     apiKey: azureApiKey,
     baseURL: baseURL,
@@ -63,39 +63,39 @@ function findLocationImage(message, context) {
   // Try to find location from pathData destination (most reliable)
   if (context?.pathData?.destination) {
     const destination = context.pathData.destination;
-    
-    let node = locationGraph.nodes.find(n => 
+
+    let node = locationGraph.nodes.find(n =>
       n.name.toLowerCase() === destination.toLowerCase()
     );
-    
+
     if (!node) {
       const destinationId = destination.toLowerCase().replace(/\s+/g, '_').replace(/zone\s*0?([1-7])/i, 'zone_$1');
-      node = locationGraph.nodes.find(n => 
+      node = locationGraph.nodes.find(n =>
         n.id.toLowerCase() === destinationId ||
         n.id.toLowerCase().includes(destinationId) ||
         n.id.toLowerCase().includes(`hsitp_${destinationId}`)
       );
     }
-    
+
     if (!node) {
-      node = locationGraph.nodes.find(n => 
+      node = locationGraph.nodes.find(n =>
         n.name.toLowerCase().includes(destination.toLowerCase()) ||
         destination.toLowerCase().includes(n.name.toLowerCase())
       );
     }
-    
+
     if (node && node.image) {
       return node.image;
     }
   }
 
   const messageLower = message.toLowerCase();
-  
+
   const zoneMatch = messageLower.match(/zone\s*0?([1-7])/i);
   if (zoneMatch) {
     const zoneNum = zoneMatch[1].padStart(2, '0');
-    let node = locationGraph.nodes.find(n => 
-      n.id === `hsitp_zone_${zoneNum}` || 
+    let node = locationGraph.nodes.find(n =>
+      n.id === `hsitp_zone_${zoneNum}` ||
       n.id.includes(`zone_${zoneNum}`)
     );
     if (node && node.image) {
@@ -114,8 +114,8 @@ function findLocationImage(message, context) {
 
   for (const { keywords, id } of locationKeywords) {
     if (keywords.some(keyword => messageLower.includes(keyword))) {
-      const node = locationGraph.nodes.find(n => 
-        n.id === id || 
+      const node = locationGraph.nodes.find(n =>
+        n.id === id ||
         n.id.includes(id.replace('hsitp_', ''))
       );
       if (node && node.image) {
@@ -159,9 +159,9 @@ async function normalizeLocationWithAI(userInput) {
 User Input: "${userInput}"
 
 Available Locations:
-${availableLocations.map((loc, idx) => 
-  `${idx + 1}. ID: "${loc.id}" | Name: "${loc.name}" | Floor: ${loc.floor === 0 ? 'G/F' : `${loc.floor}/F`} | Type: ${loc.type}`
-).join('\n')}
+${availableLocations.map((loc, idx) =>
+      `${idx + 1}. ID: "${loc.id}" | Name: "${loc.name}" | Floor: ${loc.floor === 0 ? 'G/F' : `${loc.floor}/F`} | Type: ${loc.type}`
+    ).join('\n')}
 
 Task: Match the user input to the most appropriate location from the list above.
 
@@ -190,7 +190,7 @@ Return ONLY a JSON object:
 
     const normalizationTextRaw = await runOpenAI(normalizationPrompt, { temperature: 0.1 });
     const normalizationText = normalizationTextRaw.replace(/```json|```/g, '').trim();
-    
+
     let matchData = { matchedLocationId: null, confidence: 'low' };
     try {
       matchData = JSON.parse(normalizationText);
@@ -276,23 +276,68 @@ const directionTextMap = {
   down: 'Go straight'
 };
 
+const calculateTurn = (p1, p2, p3) => {
+  const v1 = { x: p2.x - p1.x, y: p2.y - p1.y };
+  const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
+  const cross = v1.x * v2.y - v1.y * v2.x; // 2D cross product
+
+  if (Math.abs(cross) < 1000) return 'straight'; // Tolerance
+  return cross > 0 ? 'right' : 'left'; // Screen coords (y down): cross > 0 is RIGHT turn
+};
+
 const buildStepSummary = (steps = []) => {
-  return steps
-    .map((step, index) => {
-      const nextStep = steps[index + 1];
-      if (!nextStep) return null;
-      const direction = step.nextDirection ? (directionTextMap[step.nextDirection] || 'Proceed') : 'Proceed';
-      let sentence = `${index + 1}. ${direction} from ${formatNodeLabel(step)} to ${formatNodeLabel(nextStep)}`;
-      if ((step.isFloorChange || nextStep.floor !== step.floor) && typeof nextStep.floor === 'number') {
-        sentence += ` (${formatFloorLabel(nextStep.floor)})`;
+  if (steps.length < 2) return 'You are already there.';
+
+  // Refined Strategy:
+  // Identify key turning points or corridor changes
+  const segments = [];
+  let currentSegment = {
+    name: steps[0].locationName || 'Start',
+    start: steps[0],
+    end: steps[0]
+  };
+
+  for (let i = 1; i < steps.length; i++) {
+    const pt = steps[i];
+    const name = pt.locationName || 'Corridor';
+
+    if (name !== currentSegment.name) {
+      currentSegment.end = steps[i - 1];
+      if (currentSegment.start !== currentSegment.end) {
+        segments.push(currentSegment);
       }
-      if (step.routeWaypoints && step.routeWaypoints.length > 1) {
-        sentence += ` (follow the marked corridor turns)`;
-      }
-      return sentence;
-    })
-    .filter(Boolean)
-    .join('\n');
+      // Start new segment
+      currentSegment = {
+        name: name,
+        start: steps[i - 1],
+        end: pt
+      };
+    } else {
+      currentSegment.end = pt;
+    }
+  }
+  segments.push(currentSegment);
+
+  // Convert segments to natural text with turns
+  return segments.map((seg, idx) => {
+    const isLast = idx === segments.length - 1;
+    const locName = formatNodeLabel({ name: seg.name }).replace(/_/g, ' ');
+
+    if (idx === 0) return `Start at ${locName}.`;
+
+    // Determine turn from previous segment
+    const prevSeg = segments[idx - 1];
+    const turn = calculateTurn(prevSeg.start, prevSeg.end, seg.end);
+
+    // If we are just continuing in the same named area (unlikely due to segmentation logic, but possible if names map to same label)
+    if (prevSeg.name === seg.name) return `Continue along ${locName}.`;
+
+    const turnText = turn === 'straight' ? 'Go straight' : `Turn ${turn}`;
+
+    if (isLast) return `${turnText} into ${locName} and arrive at destination.`;
+
+    return `${turnText} into ${locName} and go straight.`;
+  }).join(' ');
 };
 
 // Helper: run Azure OpenAI chat completion
@@ -301,18 +346,18 @@ async function runOpenAI(prompt, options = {}) {
     throw new Error('Azure OpenAI client not initialized. Check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT.');
   }
   const { temperature = 0, system = 'You are a helpful assistant.' } = options;
-  
+
   try {
     // For Azure OpenAI, we don't need to specify model in the request
     // as it's already in the baseURL deployment path
-  const completion = await openai.chat.completions.create({
-    temperature,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: prompt }
-    ]
-  });
-  return completion.choices[0]?.message?.content || '';
+    const completion = await openai.chat.completions.create({
+      temperature,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt }
+      ]
+    });
+    return completion.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('❌ Azure OpenAI API Error:', error.message);
     if (error.status === 401) {
@@ -336,8 +381,8 @@ router.post('/message', async (req, res) => {
     }
 
     if (!openai) {
-      return res.status(500).json({ 
-        error: 'AI model not initialized. Please check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in .env file' 
+      return res.status(500).json({
+        error: 'AI model not initialized. Please check AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in .env file'
       });
     }
 
@@ -360,7 +405,7 @@ Rules:
 
     const extractionRaw = await runOpenAI(extractionPrompt, { temperature: 0.1 });
     const extractionText = extractionRaw.replace(/```json|```/g, '').trim();
-    
+
     let intentData = { intent: 'chat' };
     try {
       intentData = JSON.parse(extractionText);
@@ -375,25 +420,25 @@ Rules:
     // Step 2: Execute Navigation using Space Navigation Engine (Continuous Space RL)
     if (intentData.intent === 'navigation' && intentData.to) {
       console.log('🧭 Navigation intent detected:', intentData);
-      
+
       const fromInput = intentData.from || context?.currentLocation || 'Main Entrance';
       const toInput = intentData.to;
-      
+
       console.log('🔍 Looking up locations:');
       console.log('  From:', fromInput);
       console.log('  To:', toInput);
-      
+
       // PRIMARY: Try Space Navigation Engine (Continuous 2D RL)
       if (spaceNavEngine && spaceNavEngine.corridors.length > 0) {
         console.log('🚀 Using Space Navigation Engine (Continuous RL)');
-        
+
         try {
           const spaceNavResult = await spaceNavEngine.navigate(fromInput, toInput, { floor: 1 });
-          
+
           if (spaceNavResult.success) {
             const totalDistanceMeters = spaceNavResult.stats.totalDistance / 12; // Convert pixels to meters (12 pixels/meter)
             const estimatedTimeMinutes = Math.ceil(totalDistanceMeters / 80); // Walking speed ~80m/min
-            
+
             pathResult = {
               found: true,
               from: fromInput,
@@ -403,18 +448,18 @@ Rules:
               steps: spaceNavResult.stats.simplifiedPoints,
               algorithm: 'Continuous Space RL'
             };
-            
+
             // Build path data for visualization
             pathData = {
-              from: { 
-                name: fromInput, 
-                floor: 1, 
+              from: {
+                name: fromInput,
+                floor: 1,
                 x: spaceNavResult.start.x,
                 y: spaceNavResult.start.y,
                 pixelX: spaceNavResult.start.x,
                 pixelY: spaceNavResult.start.y
               },
-              to: { 
+              to: {
                 name: spaceNavResult.destination.name,
                 floor: spaceNavResult.destination.floor,
                 x: spaceNavResult.destination.x,
@@ -425,6 +470,7 @@ Rules:
               path: spaceNavResult.path.map((p, i) => ({
                 id: `step_${i}`,
                 name: i === 0 ? fromInput : i === spaceNavResult.path.length - 1 ? spaceNavResult.destination.name : `Step ${i}`,
+                locationName: p.locationName,
                 floor: 1,
                 x: p.x,
                 y: p.y,
@@ -442,9 +488,9 @@ Rules:
               },
               destination: spaceNavResult.destination,
               totalDistance: totalDistanceMeters,
-              estimatedTime: estimatedTimeMinutes * 60
+              estimatedTime: estimatedTimeMinutes
             };
-            
+
             console.log(`✅ Space Navigation found path:`);
             console.log(`   Algorithm: ${pathResult.algorithm}`);
             console.log(`   Path points: ${spaceNavResult.stats.originalPoints} → ${spaceNavResult.stats.simplifiedPoints}`);
@@ -452,37 +498,37 @@ Rules:
             console.log(`   Time: ~${pathResult.time} min`);
           } else {
             console.warn(`⚠️ RL Navigation couldn't find path: ${spaceNavResult.error}`);
-            pathResult = { 
-              found: false, 
+            pathResult = {
+              found: false,
               error: spaceNavResult.error || 'Path not found. The RL agent may need more training, or the destination may not be reachable.'
             };
           }
         } catch (error) {
           console.error(`❌ RL Navigation error: ${error.message}`);
-          pathResult = { 
-            found: false, 
+          pathResult = {
+            found: false,
             error: `Navigation error: ${error.message}. Please ensure corridors are defined and the RL agent is trained.`
           };
         }
       } else {
         // No space navigation engine or no corridors defined
         console.warn('⚠️ Space Navigation Engine not available or no corridors defined');
-        pathResult = { 
-          found: false, 
+        pathResult = {
+          found: false,
           error: 'Navigation not configured. Please use the Space Editor to define corridors and train the RL agent.'
         };
       }
-      
+
       // Ensure we have a result (RL method only, no graph fallback)
       if (!pathResult || !pathResult.found) {
         if (!spaceNavEngine || spaceNavEngine.corridors.length === 0) {
-          pathResult = { 
-            found: false, 
+          pathResult = {
+            found: false,
             error: 'Navigation not configured. Please use the Space Editor to define corridors and train the RL agent.'
           };
         } else {
-          pathResult = { 
-            found: false, 
+          pathResult = {
+            found: false,
             error: pathResult?.error || 'Could not find a path. The RL agent may need more training, or the destination may not be reachable.'
           };
         }
@@ -501,9 +547,9 @@ User Query: "${message}"
     if (intentData.intent === 'navigation') {
       if (pathResult?.found) {
         // Use AI-generated instructions if available
-        const stepSummary = navigationResponse?.instructions?.instructions || 
-                           (pathData?.path ? buildStepSummary(pathData.path) : '');
-        
+        const stepSummary = navigationResponse?.instructions?.instructions ||
+          (pathData?.path ? buildStepSummary(pathData.path) : '');
+
         systemPrompt += `
 SYSTEM: Path found using ${pathResult.algorithm || 'pathfinding'}!
 - From: ${pathResult.from}
@@ -549,7 +595,7 @@ Keep it helpful and concise.`;
 
   } catch (error) {
     console.error('Chat error:', error);
-    
+
     let errorMessage = 'Failed to process chat message';
     if (error.message.includes('404') || error.message.includes('not found')) {
       errorMessage = 'Azure OpenAI deployment not found. Please check your AZURE_OPENAI_DEPLOYMENT_NAME.';
@@ -560,10 +606,10 @@ Keep it helpful and concise.`;
     } else if (error.message.includes('endpoint') || error.message.includes('ENDPOINT')) {
       errorMessage = 'Invalid Azure OpenAI endpoint. Please check your AZURE_OPENAI_ENDPOINT in .env file.';
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: errorMessage,
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -571,9 +617,9 @@ Keep it helpful and concise.`;
 // Health check for chat service
 router.get('/health', async (req, res) => {
   const navStats = spaceNavEngine?.getStats() || null;
-  
-  res.json({ 
-    status: 'ok', 
+
+  res.json({
+    status: 'ok',
     service: 'Chat Service',
     provider: 'Azure OpenAI',
     model: openai ? azureDeploymentName : 'not initialized',
@@ -588,7 +634,7 @@ router.get('/navigation-stats', (req, res) => {
   if (!spaceNavEngine) {
     return res.status(503).json({ error: 'Space Navigation Engine (RL) not available' });
   }
-  
+
   res.json(spaceNavEngine.getStats());
 });
 

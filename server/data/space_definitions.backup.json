@@ -1,0 +1,106 @@
+{
+  "corridors": [
+    {
+      "id": "corridor_1765941277644",
+      "name": "Main Corridor",
+      "floor": 1,
+      "polygon": [
+        [
+          525,
+          650
+        ],
+        [
+          525,
+          775
+        ],
+        [
+          2050,
+          800
+        ],
+        [
+          2050,
+          850
+        ],
+        [
+          625,
+          850
+        ],
+        [
+          625,
+          825
+        ],
+        [
+          475,
+          825
+        ],
+        [
+          475,
+          650
+        ],
+        [
+          525,
+          650
+        ]
+      ],
+      "type": "corridor"
+    }
+  ],
+  "destinations": [
+    {
+      "id": "dest_main_entrance",
+      "name": "Main Entrance",
+      "zone": "entrance",
+      "floor": 1,
+      "x": 550,
+      "y": 700,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone02",
+      "name": "Zone 02 Exit",
+      "zone": "zone_02",
+      "floor": 1,
+      "x": 500,
+      "y": 650,
+      "facing": "north"
+    },
+    {
+      "id": "dest_zone03",
+      "name": "Zone 03 Exit",
+      "zone": "zone_03",
+      "floor": 1,
+      "x": 475,
+      "y": 700,
+      "facing": "west"
+    },
+    {
+      "id": "dest_zone06",
+      "name": "Zone 06 Exit",
+      "zone": "zone_06",
+      "floor": 1,
+      "x": 800,
+      "y": 850,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone01",
+      "name": "Zone 01 Exit",
+      "zone": "zone_01",
+      "floor": 1,
+      "x": 1200,
+      "y": 800,
+      "facing": "south"
+    },
+    {
+      "id": "dest_zone07",
+      "name": "Zone 07 Exit",
+      "zone": "zone_07",
+      "floor": 1,
+      "x": 1600,
+      "y": 850,
+      "facing": "south"
+    }
+  ],
+  "gridSize": 25,
+  "savedAt": "2026-01-02T08:04:11.750Z"
+}
