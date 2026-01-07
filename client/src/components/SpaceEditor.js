@@ -1,6 +1,51 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './SpaceEditor.css';
 
+// **NEW: Point-in-polygon test**
+const isPointInPolygon = (x, y, polygon) => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
+// **NEW: Check if two corridors touch or overlap**
+const corridorsTouchOrOverlap = (corridor1, corridor2, threshold = 5) => {
+  // Check if any point from corridor1 is very close to any point from corridor2
+  for (const p1 of corridor1.polygon) {
+    for (const p2 of corridor2.polygon) {
+      const dx = p1[0] - p2[0];
+      const dy = p1[1] - p2[1];
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= threshold) {
+        return true;
+      }
+    }
+  }
+
+  // Check if polygons overlap (point-in-polygon test)
+  for (const point of corridor1.polygon) {
+    if (isPointInPolygon(point[0], point[1], corridor2.polygon)) {
+      return true;
+    }
+  }
+
+  for (const point of corridor2.polygon) {
+    if (isPointInPolygon(point[0], point[1], corridor1.polygon)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const SpaceEditor = ({ onClose, onSave }) => {
   // Floor selection state
   const [currentFloor, setCurrentFloor] = useState(1);
@@ -9,39 +54,40 @@ const SpaceEditor = ({ onClose, onSave }) => {
   const [currentFloorImage, setCurrentFloorImage] = useState(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const imageRef = useRef(null);
-  
+
   // Editor mode state
   const [editorMode, setEditorMode] = useState('polygon'); // 'polygon', 'destination', 'select'
-  
+
   // Polygon (corridor) state
   const [corridors, setCorridors] = useState([]);
   const [currentPolygon, setCurrentPolygon] = useState([]); // Points being drawn
   const [selectedCorridorId, setSelectedCorridorId] = useState(null);
   const [corridorNameInput, setCorridorNameInput] = useState('');
-  
+
   // Destination state
   const [destinations, setDestinations] = useState([]);
   const [selectedDestinationId, setSelectedDestinationId] = useState(null);
   const [destinationNameInput, setDestinationNameInput] = useState('');
   const [destinationZoneInput, setDestinationZoneInput] = useState('');
   const [destinationFacingInput, setDestinationFacingInput] = useState('south');
-  
+
   // Dragging state
   const [isDragging, setIsDragging] = useState(false);
   const [dragType, setDragType] = useState(null); // 'polygon-point', 'destination'
   const [dragIndex, setDragIndex] = useState(null);
   const [dragCorridorId, setDragCorridorId] = useState(null);
-  
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
   // Grid settings
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize, setGridSize] = useState(10); // pixels
   const [autoGridSize, setAutoGridSize] = useState(true); // Auto-calculate based on image
   const [showGrid, setShowGrid] = useState(true);
-  
+
   // Training state
   const [isTraining, setIsTraining] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
-  
+
   // Mouse position for preview
   const [mousePosition, setMousePosition] = useState(null);
   const [hoveredEdge, setHoveredEdge] = useState(null); // {corridorId, edgeIndex}
@@ -54,23 +100,23 @@ const SpaceEditor = ({ onClose, onSave }) => {
         const response = await fetch(`${API_BASE_URL}/pathfinder/floor-plans`);
         const data = await response.json();
         setFloorPlanData(data);
-        
+
         const floors = data.floors.map(f => ({
           floor: f.floor,
           name: f.name || `Floor ${f.floor}`
         })).sort((a, b) => a.floor - b.floor);
         setAvailableFloors(floors);
-        
+
         // Load current floor
         loadFloorData(data, currentFloor);
-        
+
         // Load existing space definitions
         await loadSpaceDefinitions();
       } catch (error) {
         console.error('Error loading floor plan data:', error);
       }
     };
-    
+
     loadFloorPlanData();
   }, []);
 
@@ -92,14 +138,14 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Load floor data
   const loadFloorData = (data, floorNum) => {
     if (!data) return;
-    
+
     const floorInfo = data.floors.find(f => f.floor === floorNum);
     if (floorInfo) {
       setImageDimensions({
         width: floorInfo.image?.naturalWidth || floorInfo.image?.width || 1200,
         height: floorInfo.image?.naturalHeight || floorInfo.image?.height || 900
       });
-      
+
       if (floorInfo.image?.url) {
         setCurrentFloorImage(floorInfo.image.url);
       }
@@ -119,7 +165,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
       const width = imageRef.current.naturalWidth;
       const height = imageRef.current.naturalHeight;
       setImageDimensions({ width, height });
-      
+
       // Auto-calculate grid size based on image dimensions
       if (autoGridSize) {
         // Use approximately 1/100th of image width, rounded to nearest 5
@@ -138,13 +184,13 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // **NEW: Find nearby corridor points to snap to (auto-connection)**
   const findNearbyCorridorPoint = useCallback((x, y, snapDistance = 30) => {
     const floorCorridors = corridors.filter(c => c.floor === currentFloor);
-    
+
     for (const corridor of floorCorridors) {
       for (const point of corridor.polygon) {
         const dx = point[0] - x;
         const dy = point[1] - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < snapDistance) {
           return { x: point[0], y: point[1], corridorId: corridor.id };
         }
@@ -157,11 +203,11 @@ const SpaceEditor = ({ onClose, onSave }) => {
   const checkCorridorsConnected = useCallback(() => {
     const floorCorridors = corridors.filter(c => c.floor === currentFloor);
     if (floorCorridors.length <= 1) return { connected: true, isolated: [] };
-    
+
     // Build connectivity graph
     const adjacencyMap = new Map();
     floorCorridors.forEach(c => adjacencyMap.set(c.id, new Set()));
-    
+
     // Check which corridors touch (share points or are very close)
     for (let i = 0; i < floorCorridors.length; i++) {
       for (let j = i + 1; j < floorCorridors.length; j++) {
@@ -171,16 +217,16 @@ const SpaceEditor = ({ onClose, onSave }) => {
         }
       }
     }
-    
+
     // BFS to find connected component
     const visited = new Set();
     const queue = [floorCorridors[0].id];
     visited.add(floorCorridors[0].id);
-    
+
     while (queue.length > 0) {
       const currentId = queue.shift();
       const neighbors = adjacencyMap.get(currentId);
-      
+
       for (const neighborId of neighbors) {
         if (!visited.has(neighborId)) {
           visited.add(neighborId);
@@ -188,12 +234,12 @@ const SpaceEditor = ({ onClose, onSave }) => {
         }
       }
     }
-    
+
     // Find isolated corridors
     const isolated = floorCorridors
       .filter(c => !visited.has(c.id))
       .map(c => c.name || c.id);
-    
+
     return {
       connected: isolated.length === 0,
       isolated,
@@ -202,212 +248,144 @@ const SpaceEditor = ({ onClose, onSave }) => {
     };
   }, [corridors, currentFloor]);
 
-  // **NEW: Check if two corridors touch or overlap**
-  const corridorsTouchOrOverlap = (corridor1, corridor2, threshold = 5) => {
-    // Check if any point from corridor1 is very close to any point from corridor2
-    for (const p1 of corridor1.polygon) {
-      for (const p2 of corridor2.polygon) {
-        const dx = p1[0] - p2[0];
-        const dy = p1[1] - p2[1];
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance <= threshold) {
-          return true;
-        }
-      }
-    }
-    
-    // Check if polygons overlap (point-in-polygon test)
-    for (const point of corridor1.polygon) {
-      if (isPointInPolygon(point[0], point[1], corridor2.polygon)) {
-        return true;
-      }
-    }
-    
-    for (const point of corridor2.polygon) {
-      if (isPointInPolygon(point[0], point[1], corridor1.polygon)) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
-
-  // **NEW: Point-in-polygon test**
-  const isPointInPolygon = (x, y, polygon) => {
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i][0], yi = polygon[i][1];
-      const xj = polygon[j][0], yj = polygon[j][1];
-      
-      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
-        inside = !inside;
-      }
-    }
-    return inside;
-  };
-
-  // Get image coordinates from mouse event
-  const getImageCoords = useCallback((event) => {
-    const imgElement = imageRef.current;
-    if (!imgElement) return null;
-
-    // Get the SVG overlay element (parent of image)
-    const svgElement = event.currentTarget?.querySelector('svg') || 
-                      event.target?.closest('svg')?.parentElement?.querySelector('svg');
-    const container = imgElement.parentElement;
-    
-    if (!container) return null;
-
-    const imgRect = imgElement.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    
-    // Calculate scale factors
-    const scaleX = imgElement.naturalWidth / imgRect.width;
-    const scaleY = imgElement.naturalHeight / imgRect.height;
-
-    // Get mouse position relative to container
-    const mouseX = event.clientX - containerRect.left;
-    const mouseY = event.clientY - containerRect.top;
-
-    // Convert to image coordinates
-    let x = mouseX * scaleX;
-    let y = mouseY * scaleY;
-
-    // Ensure coordinates are within image bounds
-    x = Math.max(0, Math.min(x, imgElement.naturalWidth));
-    y = Math.max(0, Math.min(y, imgElement.naturalHeight));
-
-    x = snapToGridCoord(x);
-    y = snapToGridCoord(y);
-
-    return { x, y };
-  }, [snapToGridCoord]);
+  // **OPTIMIZATION: Memoize connectivity check to prevent re-calculation on every render**
+  const connectivityStatus = React.useMemo(() => checkCorridorsConnected(), [checkCorridorsConnected]);
 
 
-  // Handle mouse move - calculate coordinates in SVG viewBox space
-  const handleMouseMove = (event) => {
-    const svgElement = event.currentTarget;
-    const imgElement = imageRef.current;
-    if (!svgElement || !imgElement) return;
+  // Helper: Get consistent SVG coordinates with snap-to-grid
+  const getSVGCoordinates = (event) => {
+    const svgElement = event.currentTarget?.tagName === 'svg' ? event.currentTarget :
+      event.target?.closest('svg');
 
-    // Get SVG's actual displayed dimensions (matches image due to preserveAspectRatio)
+    if (!svgElement || !imageRef.current) return null;
+
     const svgRect = svgElement.getBoundingClientRect();
-    const imgRect = imgElement.getBoundingClientRect();
-    
-    // SVG and image should have the same displayed area
-    // Calculate mouse position relative to SVG
-    const mouseX = event.clientX - svgRect.left;
-    const mouseY = event.clientY - svgRect.top;
-
-    // Get viewBox dimensions
     const viewBoxWidth = imageDimensions.width;
     const viewBoxHeight = imageDimensions.height;
 
-    // Calculate the actual displayed SVG area (accounting for preserveAspectRatio)
+    // Calculate aspect ratios
     const svgAspect = viewBoxWidth / viewBoxHeight;
     const displayAspect = svgRect.width / svgRect.height;
 
     let displayedWidth, displayedHeight, offsetX, offsetY;
 
     if (svgAspect > displayAspect) {
-      // SVG is wider - fit to width
       displayedWidth = svgRect.width;
       displayedHeight = svgRect.width / svgAspect;
       offsetX = 0;
       offsetY = (svgRect.height - displayedHeight) / 2;
     } else {
-      // SVG is taller - fit to height
       displayedWidth = svgRect.height * svgAspect;
       displayedHeight = svgRect.height;
       offsetX = (svgRect.width - displayedWidth) / 2;
       offsetY = 0;
     }
 
-    // Check if mouse is within the displayed SVG area
+    const mouseX = event.clientX - svgRect.left;
+    const mouseY = event.clientY - svgRect.top;
+
+    // Relative to the displayed image area
     const relativeX = mouseX - offsetX;
     const relativeY = mouseY - offsetY;
 
-    if (relativeX < 0 || relativeX > displayedWidth || 
-        relativeY < 0 || relativeY > displayedHeight) {
-      setMousePosition(null);
-      return;
+    // Check bounds
+    if (relativeX < 0 || relativeX > displayedWidth ||
+      relativeY < 0 || relativeY > displayedHeight) {
+      return null;
     }
 
-    // Convert to viewBox coordinates
+    // Scale to viewBox
     const scaleX = viewBoxWidth / displayedWidth;
     const scaleY = viewBoxHeight / displayedHeight;
 
     let x = relativeX * scaleX;
     let y = relativeY * scaleY;
 
-    // Ensure coordinates are within viewBox bounds
+    // Clamp
     x = Math.max(0, Math.min(x, viewBoxWidth));
     y = Math.max(0, Math.min(y, viewBoxHeight));
 
-    const coords = {
+    // Snap
+    return {
       x: snapToGridCoord(x),
       y: snapToGridCoord(y)
     };
+  };
 
-    setMousePosition(coords);
+  // Handle mouse move
+  const handleMouseMove = (event) => {
+    // Determine coordinate source
+    const coords = getSVGCoordinates(event);
 
-    // Check for edge hover (for shift+click insertion)
-    if (editorMode === 'polygon' && selectedCorridorId && !isDragging && coords) {
-      const selectedCorridor = corridors.find(c => c.id === selectedCorridorId);
-      if (selectedCorridor) {
-        const edgeIndex = findClosestEdge(selectedCorridor.polygon, coords);
-        setHoveredEdge(edgeIndex !== null ? { corridorId: selectedCorridorId, edgeIndex } : null);
+    if (coords) {
+      setMousePosition(coords);
+
+      // Edge hover detection
+      if (editorMode === 'polygon' && selectedCorridorId && !isDragging) {
+        const selectedCorridor = corridors.find(c => c.id === selectedCorridorId);
+        if (selectedCorridor) {
+          const edgeIndex = findClosestEdge(selectedCorridor.polygon, coords);
+          setHoveredEdge(edgeIndex !== null ? { corridorId: selectedCorridorId, edgeIndex } : null);
+        } else {
+          setHoveredEdge(null);
+        }
       } else {
         setHoveredEdge(null);
       }
-    } else {
-      setHoveredEdge(null);
-    }
 
-    // Handle dragging
-    if (isDragging && coords) {
-      if (dragType === 'polygon-point' && dragCorridorId !== null && dragIndex !== null) {
-        setCorridors(prev => prev.map(corridor => {
-          if (corridor.id === dragCorridorId) {
-            const newPolygon = [...corridor.polygon];
-            newPolygon[dragIndex] = [coords.x, coords.y];
-            return { ...corridor, polygon: newPolygon };
-          }
-          return corridor;
-        }));
-      } else if (dragType === 'destination' && selectedDestinationId !== null) {
-        setDestinations(prev => prev.map(dest => {
-          if (dest.id === selectedDestinationId) {
-            return { ...dest, x: coords.x, y: coords.y };
-          }
-          return dest;
-        }));
+      // Handle dragging
+      if (isDragging) {
+        if (dragType === 'polygon-point' && dragCorridorId !== null && dragIndex !== null) {
+          setCorridors(prev => prev.map(corridor => {
+            if (corridor.id === dragCorridorId) {
+              const newPolygon = [...corridor.polygon];
+              newPolygon[dragIndex] = [
+                snapToGridCoord(coords.x + dragOffset.x),
+                snapToGridCoord(coords.y + dragOffset.y)
+              ];
+              return { ...corridor, polygon: newPolygon };
+            }
+            return corridor;
+          }));
+        } else if (dragType === 'destination' && selectedDestinationId !== null) {
+          setDestinations(prev => prev.map(dest => {
+            if (dest.id === selectedDestinationId) {
+              return {
+                ...dest,
+                x: snapToGridCoord(coords.x + dragOffset.x),
+                y: snapToGridCoord(coords.y + dragOffset.y)
+              };
+            }
+            return dest;
+          }));
+        }
       }
+    } else {
+      setMousePosition(null);
     }
   };
 
   // Find closest edge on a polygon to insert a point
   const findClosestEdge = (polygon, point) => {
     if (polygon.length < 2) return null;
-    
+
     let minDist = Infinity;
     let closestIndex = null;
-    
+
     for (let i = 0; i < polygon.length; i++) {
       const p1 = polygon[i];
       const p2 = polygon[(i + 1) % polygon.length];
-      
+
       // Calculate distance from point to line segment
       const A = point.x - p1[0];
       const B = point.y - p1[1];
       const C = p2[0] - p1[0];
       const D = p2[1] - p1[1];
-      
+
       const dot = A * C + B * D;
       const lenSq = C * C + D * D;
       let param = lenSq !== 0 ? dot / lenSq : -1;
-      
+
       let xx, yy;
       if (param < 0) {
         xx = p1[0];
@@ -419,17 +397,17 @@ const SpaceEditor = ({ onClose, onSave }) => {
         xx = p1[0] + param * C;
         yy = p1[1] + param * D;
       }
-      
+
       const dx = point.x - xx;
       const dy = point.y - yy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (dist < minDist && dist < 20) { // 20px threshold
         minDist = dist;
         closestIndex = i + 1;
       }
     }
-    
+
     return closestIndex;
   };
 
@@ -437,53 +415,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
   const handleImageClick = (event) => {
     if (isDragging) return;
 
-    const svgElement = event.currentTarget;
-    const imgElement = imageRef.current;
-    if (!svgElement || !imgElement) return;
-
-    const svgRect = svgElement.getBoundingClientRect();
-    const viewBoxWidth = imageDimensions.width;
-    const viewBoxHeight = imageDimensions.height;
-    const svgAspect = viewBoxWidth / viewBoxHeight;
-    const displayAspect = svgRect.width / svgRect.height;
-
-    let displayedWidth, displayedHeight, offsetX, offsetY;
-
-    if (svgAspect > displayAspect) {
-      displayedWidth = svgRect.width;
-      displayedHeight = svgRect.width / svgAspect;
-      offsetX = 0;
-      offsetY = (svgRect.height - displayedHeight) / 2;
-    } else {
-      displayedWidth = svgRect.height * svgAspect;
-      displayedHeight = svgRect.height;
-      offsetX = (svgRect.width - displayedWidth) / 2;
-      offsetY = 0;
-    }
-
-    const mouseX = event.clientX - svgRect.left;
-    const mouseY = event.clientY - svgRect.top;
-    const relativeX = mouseX - offsetX;
-    const relativeY = mouseY - offsetY;
-
-    if (relativeX < 0 || relativeX > displayedWidth || 
-        relativeY < 0 || relativeY > displayedHeight) {
-      return;
-    }
-
-    const scaleX = viewBoxWidth / displayedWidth;
-    const scaleY = viewBoxHeight / displayedHeight;
-
-    let x = relativeX * scaleX;
-    let y = relativeY * scaleY;
-
-    x = Math.max(0, Math.min(x, viewBoxWidth));
-    y = Math.max(0, Math.min(y, viewBoxHeight));
-
-    const coords = {
-      x: snapToGridCoord(x),
-      y: snapToGridCoord(y)
-    };
+    const coords = getSVGCoordinates(event);
+    if (!coords) return;
 
     if (editorMode === 'polygon') {
       // Check if clicking on existing polygon edge to add point
@@ -505,18 +438,18 @@ const SpaceEditor = ({ onClose, onSave }) => {
           }
         }
       }
-      
+
       // **NEW: Auto-snap to nearby corridor points for connection**
       const nearbyPoint = findNearbyCorridorPoint(coords.x, coords.y, 30);
-      const finalCoords = nearbyPoint 
+      const finalCoords = nearbyPoint
         ? { x: nearbyPoint.x, y: nearbyPoint.y }
         : coords;
-      
+
       // Visual feedback for snap
       if (nearbyPoint && currentPolygon.length > 0) {
         console.log(`🔗 Auto-snapping to existing corridor point at (${nearbyPoint.x}, ${nearbyPoint.y})`);
       }
-      
+
       // Add point to current polygon
       setCurrentPolygon(prev => [...prev, [finalCoords.x, finalCoords.y]]);
     } else if (editorMode === 'destination') {
@@ -587,6 +520,18 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Handle polygon point drag start
   const handlePolygonPointDragStart = (event, corridorId, pointIndex) => {
     event.stopPropagation();
+    const coords = getSVGCoordinates(event);
+    if (!coords) return;
+
+    const corridor = corridors.find(c => c.id === corridorId);
+    if (corridor) {
+      const point = corridor.polygon[pointIndex];
+      setDragOffset({
+        x: point[0] - coords.x,
+        y: point[1] - coords.y
+      });
+    }
+
     setIsDragging(true);
     setDragType('polygon-point');
     setDragCorridorId(corridorId);
@@ -597,6 +542,17 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Handle destination drag start
   const handleDestinationDragStart = (event, destId) => {
     event.stopPropagation();
+    const coords = getSVGCoordinates(event);
+    if (!coords) return;
+
+    const dest = destinations.find(d => d.id === destId);
+    if (dest) {
+      setDragOffset({
+        x: dest.x - coords.x,
+        y: dest.y - coords.y
+      });
+    }
+
     setIsDragging(true);
     setDragType('destination');
     setSelectedDestinationId(destId);
@@ -615,7 +571,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Update selected corridor name
   const updateCorridorName = (name) => {
     if (selectedCorridorId) {
-      setCorridors(prev => prev.map(c => 
+      setCorridors(prev => prev.map(c =>
         c.id === selectedCorridorId ? { ...c, name } : c
       ));
     }
@@ -624,7 +580,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Update selected destination
   const updateDestination = (field, value) => {
     if (selectedDestinationId) {
-      setDestinations(prev => prev.map(d => 
+      setDestinations(prev => prev.map(d =>
         d.id === selectedDestinationId ? { ...d, [field]: value } : d
       ));
     }
@@ -634,7 +590,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
   const handleSave = async () => {
     // **NEW: Validate corridor connectivity before saving**
     const connectivity = checkCorridorsConnected();
-    
+
     if (!connectivity.connected) {
       const proceed = window.confirm(
         `⚠️ Warning: Not all corridors are connected!\n\n` +
@@ -643,12 +599,12 @@ const SpaceEditor = ({ onClose, onSave }) => {
         `The RL agent will NOT be able to navigate to destinations in isolated corridors.\n\n` +
         `Do you want to save anyway? (Recommended: Cancel and connect corridors first)`
       );
-      
+
       if (!proceed) {
         return;
       }
     }
-    
+
     try {
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
       const response = await fetch(`${API_BASE_URL}/space-nav/definitions`, {
@@ -662,8 +618,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
       });
 
       if (response.ok) {
-        const message = connectivity.connected 
-          ? '✅ Space definitions saved successfully!\n\nAll corridors are connected.' 
+        const message = connectivity.connected
+          ? '✅ Space definitions saved successfully!\n\nAll corridors are connected.'
           : '⚠️ Space definitions saved with warnings.\n\nSome corridors are not connected.';
         alert(message);
         if (onSave) onSave({ corridors, destinations });
@@ -683,10 +639,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
 
     try {
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
+
       // Save first
       await handleSave();
-      
+
       // Start training with progress updates
       const response = await fetch(`${API_BASE_URL}/space-nav/train`, {
         method: 'POST',
@@ -701,7 +657,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
           setIsTraining(false);
           return;
         }
-        
+
         // Poll for progress
         const pollProgress = setInterval(async () => {
           try {
@@ -710,10 +666,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
               console.error('Failed to get training progress');
               return;
             }
-            
+
             const { progress, complete, isTraining } = await progressRes.json();
             setTrainingProgress(progress || 0);
-            
+
             if (complete || !isTraining) {
               clearInterval(pollProgress);
               setIsTraining(false);
@@ -737,54 +693,33 @@ const SpaceEditor = ({ onClose, onSave }) => {
     }
   };
 
-  // Render grid overlay
+  // Render grid overlay using SVG Pattern (Performance Optimization)
+  const renderGridDefs = () => {
+    if (!showGrid) return null;
+    return (
+      <defs>
+        <pattern id="gridPattern" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+          <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+        </pattern>
+      </defs>
+    );
+  };
+
   const renderGrid = () => {
     if (!showGrid || !imageDimensions.width) return null;
-
-    const lines = [];
-    const { width, height } = imageDimensions;
-
-    // Vertical lines
-    for (let x = 0; x <= width; x += gridSize) {
-      lines.push(
-        <line
-          key={`v-${x}`}
-          x1={x}
-          y1={0}
-          x2={x}
-          y2={height}
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="0.5"
-        />
-      );
-    }
-
-    // Horizontal lines
-    for (let y = 0; y <= height; y += gridSize) {
-      lines.push(
-        <line
-          key={`h-${y}`}
-          x1={0}
-          y1={y}
-          x2={width}
-          y2={y}
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="0.5"
-        />
-      );
-    }
-
-    return <g className="grid-overlay">{lines}</g>;
+    return (
+      <rect width="100%" height="100%" fill="url(#gridPattern)" style={{ pointerEvents: 'none' }} />
+    );
   };
 
   // Render corridors for current floor
   const renderCorridors = () => {
     const floorCorridors = corridors.filter(c => c.floor === currentFloor);
-    
+
     return floorCorridors.map(corridor => {
       const isSelected = corridor.id === selectedCorridorId;
       const points = corridor.polygon.map(p => p.join(',')).join(' ');
-      
+
       return (
         <g key={corridor.id} className={`corridor-group ${isSelected ? 'selected' : ''}`}>
           <polygon
@@ -792,15 +727,18 @@ const SpaceEditor = ({ onClose, onSave }) => {
             fill={isSelected ? 'rgba(0, 200, 150, 0.3)' : 'rgba(0, 150, 255, 0.2)'}
             stroke={isSelected ? '#00c896' : '#0096ff'}
             strokeWidth="2"
-            onClick={() => setSelectedCorridorId(corridor.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedCorridorId(corridor.id);
+            }}
             style={{ cursor: 'pointer' }}
           />
-          
+
           {/* Render edges with hover effect for insertion */}
           {isSelected && corridor.polygon.map((point, idx) => {
             const nextPoint = corridor.polygon[(idx + 1) % corridor.polygon.length];
             const isHovered = hoveredEdge?.corridorId === corridor.id && hoveredEdge?.edgeIndex === idx + 1;
-            
+
             return (
               <line
                 key={`${corridor.id}-edge-${idx}`}
@@ -812,12 +750,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
                 strokeWidth="4"
                 strokeDasharray={isHovered ? "4,4" : "none"}
                 style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
-                onMouseEnter={() => setHoveredEdge({ corridorId: corridor.id, edgeIndex: idx + 1 })}
-                onMouseLeave={() => setHoveredEdge(null)}
               />
             );
           })}
-          
+
           {/* Render draggable points */}
           {corridor.polygon.map((point, idx) => (
             <circle
@@ -832,7 +768,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
               onMouseDown={(e) => handlePolygonPointDragStart(e, corridor.id, idx)}
             />
           ))}
-          
+
           {/* Corridor label */}
           <text
             x={corridor.polygon.reduce((sum, p) => sum + p[0], 0) / corridor.polygon.length}
@@ -854,10 +790,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
     if (currentPolygon.length === 0) return null;
 
     const points = currentPolygon.map(p => p.join(',')).join(' ');
-    
+
     // **NEW: Check if mouse is near a corridor point for snapping**
     const nearbyPoint = mousePosition ? findNearbyCorridorPoint(mousePosition.x, mousePosition.y, 30) : null;
-    
+
     return (
       <g className="current-polygon">
         <polyline
@@ -932,10 +868,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Render destinations for current floor
   const renderDestinations = () => {
     const floorDestinations = destinations.filter(d => d.floor === currentFloor);
-    
+
     return floorDestinations.map(dest => {
       const isSelected = dest.id === selectedDestinationId;
-      
+
       // Direction arrow based on facing
       const arrowRotation = {
         north: 270,
@@ -943,10 +879,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
         east: 0,
         west: 180
       }[dest.facing] || 0;
-      
+
       return (
-        <g 
-          key={dest.id} 
+        <g
+          key={dest.id}
           className={`destination-group ${isSelected ? 'selected' : ''}`}
           transform={`translate(${dest.x}, ${dest.y})`}
         >
@@ -958,7 +894,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
             strokeWidth="3"
             style={{ cursor: 'grab' }}
             onMouseDown={(e) => handleDestinationDragStart(e, dest.id)}
-            onClick={() => setSelectedDestinationId(dest.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedDestinationId(dest.id);
+            }}
           />
           {/* Direction arrow */}
           <g transform={`rotate(${arrowRotation})`}>
@@ -1006,8 +945,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
           <h2>🗺️ Space Navigation Editor</h2>
           <div className="floor-selector">
             <label>Floor:</label>
-            <select 
-              value={currentFloor} 
+            <select
+              value={currentFloor}
               onChange={(e) => setCurrentFloor(parseInt(e.target.value))}
             >
               {availableFloors.map(f => (
@@ -1019,7 +958,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
           </div>
         </div>
         <div className="header-actions">
-          <button 
+          <button
             className="btn-check-connectivity"
             onClick={() => {
               const connectivity = checkCorridorsConnected();
@@ -1034,9 +973,9 @@ const SpaceEditor = ({ onClose, onSave }) => {
                 );
               }
             }}
-            disabled={corridors.length <=1}
+            disabled={corridors.length <= 1}
             style={{
-              background: corridors.length > 1 ? (checkCorridorsConnected().connected ? '#4CAF50' : '#ff9800') : '#666',
+              background: corridors.length > 1 ? (connectivityStatus.connected ? '#4CAF50' : '#ff9800') : '#666',
               color: 'white',
               padding: '8px 16px',
               borderRadius: '5px',
@@ -1046,9 +985,9 @@ const SpaceEditor = ({ onClose, onSave }) => {
               fontWeight: '500'
             }}
           >
-            {corridors.length > 1 ? (checkCorridorsConnected().connected ? '✓ Corridors Connected' : '⚠️ Check Connectivity') : '🔗 Connectivity'}
+            {corridors.length > 1 ? (connectivityStatus.connected ? '✓ Corridors Connected' : '⚠️ Check Connectivity') : '🔗 Connectivity'}
           </button>
-          <button 
+          <button
             className={`btn-train ${isTraining ? 'training' : ''}`}
             onClick={handleTrain}
             disabled={isTraining || corridors.length === 0}
@@ -1072,19 +1011,19 @@ const SpaceEditor = ({ onClose, onSave }) => {
           <div className="tool-section">
             <h3>Editor Mode</h3>
             <div className="mode-buttons">
-              <button 
+              <button
                 className={`mode-btn ${editorMode === 'polygon' ? 'active' : ''}`}
                 onClick={() => setEditorMode('polygon')}
               >
                 🔷 Draw Corridor
               </button>
-              <button 
+              <button
                 className={`mode-btn ${editorMode === 'destination' ? 'active' : ''}`}
                 onClick={() => setEditorMode('destination')}
               >
                 📍 Place Exit
               </button>
-              <button 
+              <button
                 className={`mode-btn ${editorMode === 'select' ? 'active' : ''}`}
                 onClick={() => setEditorMode('select')}
               >
@@ -1097,34 +1036,34 @@ const SpaceEditor = ({ onClose, onSave }) => {
           <div className="tool-section">
             <h3>Grid Settings</h3>
             <label className="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={showGrid} 
-                onChange={(e) => setShowGrid(e.target.checked)} 
+              <input
+                type="checkbox"
+                checked={showGrid}
+                onChange={(e) => setShowGrid(e.target.checked)}
               />
               Show Grid
             </label>
             <label className="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={snapToGrid} 
-                onChange={(e) => setSnapToGrid(e.target.checked)} 
+              <input
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={(e) => setSnapToGrid(e.target.checked)}
               />
               Snap to Grid
             </label>
             <label className="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={autoGridSize} 
-                onChange={(e) => setAutoGridSize(e.target.checked)} 
+              <input
+                type="checkbox"
+                checked={autoGridSize}
+                onChange={(e) => setAutoGridSize(e.target.checked)}
               />
               Auto-calculate Grid Size
             </label>
             <div className="input-group">
               <label>Grid Size (px):</label>
-              <input 
-                type="number" 
-                value={gridSize} 
+              <input
+                type="number"
+                value={gridSize}
                 onChange={(e) => {
                   setGridSize(parseInt(e.target.value) || 10);
                   setAutoGridSize(false);
@@ -1147,8 +1086,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
               <h3>Corridor Drawing</h3>
               <div className="input-group">
                 <label>Corridor Name:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={corridorNameInput}
                   onChange={(e) => setCorridorNameInput(e.target.value)}
                   placeholder="Main Corridor"
@@ -1162,14 +1101,14 @@ const SpaceEditor = ({ onClose, onSave }) => {
               {currentPolygon.length > 0 && (
                 <div className="drawing-controls">
                   <span>{currentPolygon.length} points</span>
-                  <button 
+                  <button
                     className="btn-small btn-finish"
                     onClick={finishPolygon}
                     disabled={currentPolygon.length < 3}
                   >
                     ✓ Finish
                   </button>
-                  <button 
+                  <button
                     className="btn-small btn-cancel"
                     onClick={cancelPolygon}
                   >
@@ -1186,8 +1125,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
               <h3>Exit Placement</h3>
               <div className="input-group">
                 <label>Exit Name:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={destinationNameInput}
                   onChange={(e) => setDestinationNameInput(e.target.value)}
                   placeholder="Zone 01 Exit"
@@ -1195,8 +1134,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
               </div>
               <div className="input-group">
                 <label>Zone (group):</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={destinationZoneInput}
                   onChange={(e) => setDestinationZoneInput(e.target.value)}
                   placeholder="zone_01"
@@ -1204,7 +1143,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
               </div>
               <div className="input-group">
                 <label>Exit Facing:</label>
-                <select 
+                <select
                   value={destinationFacingInput}
                   onChange={(e) => setDestinationFacingInput(e.target.value)}
                 >
@@ -1226,14 +1165,14 @@ const SpaceEditor = ({ onClose, onSave }) => {
               <h3>Selected Corridor</h3>
               <div className="input-group">
                 <label>Name:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={selectedCorridor.name}
                   onChange={(e) => updateCorridorName(e.target.value)}
                 />
               </div>
               <p className="info">Points: {selectedCorridor.polygon.length}</p>
-              <button 
+              <button
                 className="btn-small btn-delete"
                 onClick={deleteSelectedCorridor}
               >
@@ -1248,23 +1187,23 @@ const SpaceEditor = ({ onClose, onSave }) => {
               <h3>Selected Exit</h3>
               <div className="input-group">
                 <label>Name:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={selectedDestination.name}
                   onChange={(e) => updateDestination('name', e.target.value)}
                 />
               </div>
               <div className="input-group">
                 <label>Zone:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={selectedDestination.zone}
                   onChange={(e) => updateDestination('zone', e.target.value)}
                 />
               </div>
               <div className="input-group">
                 <label>Facing:</label>
-                <select 
+                <select
                   value={selectedDestination.facing}
                   onChange={(e) => updateDestination('facing', e.target.value)}
                 >
@@ -1277,7 +1216,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
               <p className="info">
                 Position: ({Math.round(selectedDestination.x)}, {Math.round(selectedDestination.y)})
               </p>
-              <button 
+              <button
                 className="btn-small btn-delete"
                 onClick={deleteSelectedDestination}
               >
@@ -1310,7 +1249,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
         {/* Canvas area */}
         <div className="canvas-container">
           {currentFloorImage && (
-            <div 
+            <div
               className="canvas-wrapper"
               style={{ position: 'relative' }}
             >
@@ -1332,32 +1271,32 @@ const SpaceEditor = ({ onClose, onSave }) => {
                   width: '100%',
                   height: '100%',
                   pointerEvents: 'all',
-                  cursor: editorMode === 'polygon' ? 'crosshair' : 
-                          editorMode === 'destination' ? 'crosshair' : 'default',
+                  cursor: (editorMode === 'polygon' || editorMode === 'destination') ? 'none' : 'default',
                   overflow: 'visible'
                 }}
                 onClick={handleImageClick}
                 onDoubleClick={handleDoubleClick}
                 onMouseMove={handleMouseMove}
               >
+                {renderGridDefs()}
                 {renderGrid()}
                 {renderCorridors()}
                 {renderCurrentPolygon()}
                 {renderDestinations()}
-                
+
                 {/* Cursor crosshair - only show when not dragging */}
                 {mousePosition && editorMode !== 'select' && !isDragging && (
                   <g className="cursor-crosshair" style={{ pointerEvents: 'none' }}>
-                    <line 
+                    <line
                       x1={mousePosition.x - 15} y1={mousePosition.y}
                       x2={mousePosition.x + 15} y2={mousePosition.y}
-                      stroke="rgba(255, 255, 255, 0.9)" 
+                      stroke="rgba(255, 255, 255, 0.9)"
                       strokeWidth="2"
                     />
-                    <line 
+                    <line
                       x1={mousePosition.x} y1={mousePosition.y - 15}
                       x2={mousePosition.x} y2={mousePosition.y + 15}
-                      stroke="rgba(255, 255, 255, 0.9)" 
+                      stroke="rgba(255, 255, 255, 0.9)"
                       strokeWidth="2"
                     />
                     <circle
@@ -1368,8 +1307,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
                       stroke="rgba(0, 0, 0, 0.7)"
                       strokeWidth="1.5"
                     />
-                    <text 
-                      x={mousePosition.x + 12} 
+                    <text
+                      x={mousePosition.x + 12}
                       y={mousePosition.y - 8}
                       fill="white"
                       fontSize="11"
@@ -1383,7 +1322,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
               </svg>
             </div>
           )}
-          
+
           {!currentFloorImage && (
             <div className="no-image">
               <p>No floor plan image available for this floor.</p>
@@ -1398,8 +1337,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
           <div className="training-modal">
             <h3>🧠 Training RL Agent</h3>
             <div className="progress-bar">
-              <div 
-                className="progress-fill" 
+              <div
+                className="progress-fill"
                 style={{ width: `${trainingProgress}%` }}
               />
             </div>

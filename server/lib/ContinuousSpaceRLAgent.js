@@ -74,11 +74,31 @@ class ContinuousSpaceRLAgent {
         let navigableCount = 0;
         for (let y = 0; y < this.gridHeight; y++) {
             for (let x = 0; x < this.gridWidth; x++) {
-                // Sample center of the cell
-                const px = (x + 0.5) * res;
-                const py = (y + 0.5) * res;
+                // Sample multiple points in the cell to prevent "gaps" between touching polygons
+                // If ANY point (Center, TL, TR, BR, BL) is inside, the cell is navigable.
+                const cx = (x + 0.5) * res;
+                const cy = (y + 0.5) * res;
 
-                const isNavigable = this.isPointInAnyCorridorRaw(px, py);
+                // Check center first (most likely)
+                let isNavigable = this.isPointInAnyCorridorRaw(cx, cy);
+
+                if (!isNavigable) {
+                    // Check corners if center failed (handling edge cases and seams)
+                    const corners = [
+                        [x * res, y * res],             // TL
+                        [(x + 1) * res, y * res],       // TR
+                        [x * res, (y + 1) * res],       // BL
+                        [(x + 1) * res, (y + 1) * res]  // BR
+                    ];
+
+                    for (const [px, py] of corners) {
+                        if (this.isPointInAnyCorridorRaw(px, py)) {
+                            isNavigable = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (isNavigable) {
                     this.navigableGrid[y * this.gridWidth + x] = 1;
                     navigableCount++;
@@ -88,7 +108,58 @@ class ContinuousSpaceRLAgent {
             }
         }
 
+        // Compute Clearance Map (Distance to nearest obstacle)
+        // This is used to add a cost penalty for hugging walls, encouraging center-line paths.
+        this.computeClearanceMap();
+
         console.log(`   Navigable Cells: ${navigableCount} / ${this.gridWidth * this.gridHeight}`);
+    }
+
+    /**
+     * Compute clearance for each cell (Manhattan distance to nearest obstacle)
+     */
+    computeClearanceMap() {
+        const width = this.gridWidth;
+        const height = this.gridHeight;
+        const size = width * height;
+        this.clearanceMap = new Float32Array(size).fill(0); // Store distance
+
+        // Initialize with max distance
+        const maxDist = width + height;
+        for (let i = 0; i < size; i++) {
+            if (this.navigableGrid[i] === 0) {
+                this.clearanceMap[i] = 0; // Obstacles have 0 clearance
+            } else {
+                this.clearanceMap[i] = maxDist;
+            }
+        }
+
+        // Two-pass algorithm (Manhattan distance transform)
+        // Pass 1: Top-Left to Bottom-Right
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                if (this.navigableGrid[idx] === 0) continue;
+
+                let minVal = this.clearanceMap[idx];
+                if (x > 0) minVal = Math.min(minVal, this.clearanceMap[idx - 1] + 1);
+                if (y > 0) minVal = Math.min(minVal, this.clearanceMap[idx - width] + 1);
+                this.clearanceMap[idx] = minVal;
+            }
+        }
+
+        // Pass 2: Bottom-Right to Top-Left
+        for (let y = height - 1; y >= 0; y--) {
+            for (let x = width - 1; x >= 0; x--) {
+                const idx = y * width + x;
+                if (this.navigableGrid[idx] === 0) continue;
+
+                let minVal = this.clearanceMap[idx];
+                if (x < width - 1) minVal = Math.min(minVal, this.clearanceMap[idx + 1] + 1);
+                if (y < height - 1) minVal = Math.min(minVal, this.clearanceMap[idx + width] + 1);
+                this.clearanceMap[idx] = minVal;
+            }
+        }
     }
 
     /**
@@ -207,6 +278,15 @@ class ContinuousSpaceRLAgent {
 
                     let maxVal = -100000;
 
+                    // Wall proximity penalty (Center-Line Preference)
+                    // Clearance is distance to nearest wall (in grid cells)
+                    // Penalty decreases as clearance increases
+                    const clearance = this.clearanceMap[idx];
+                    // Example penalty: 0 at clearance > 5, ramping up as clearance approaches 0
+                    // But we want a continuous gradient to the center.
+                    // Simple gradient: cost multiplier = 1 + (10 / (clearance + 1))
+                    const wallPenalty = 5 / (clearance + 0.5);
+
                     // Check all neighbors
                     for (const n of neighbors) {
                         const nx = x + n.dx;
@@ -216,9 +296,10 @@ class ContinuousSpaceRLAgent {
                             const nIdx = ny * width + nx;
                             if (this.navigableGrid[nIdx] === 1) {
                                 // Value calculation:
-                                // Reward = -StepCost * Distance
+                                // Reward = -StepCost * Distance * (1 + WallPenalty)
                                 // V(s) = R + gamma * V(s')
-                                const v = (-n.cost * this.options.stepCost) + (gamma * values[nIdx]);
+                                const stepCost = n.cost * this.options.stepCost * (1 + wallPenalty);
+                                const v = (-stepCost) + (gamma * values[nIdx]);
                                 if (v > maxVal) maxVal = v;
                             }
                         }

@@ -276,13 +276,15 @@ const directionTextMap = {
   down: 'Go straight'
 };
 
-const calculateTurn = (p1, p2, p3) => {
-  const v1 = { x: p2.x - p1.x, y: p2.y - p1.y };
-  const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
-  const cross = v1.x * v2.y - v1.y * v2.x; // 2D cross product
+const getSegmentDirection = (p1, p2) => {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y; // Y is down
 
-  if (Math.abs(cross) < 1000) return 'straight'; // Tolerance
-  return cross > 0 ? 'right' : 'left'; // Screen coords (y down): cross > 0 is RIGHT turn
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? 'East' : 'West';
+  } else {
+    return dy > 0 ? 'South' : 'North';
+  }
 };
 
 const buildStepSummary = (steps = []) => {
@@ -299,7 +301,8 @@ const buildStepSummary = (steps = []) => {
 
   for (let i = 1; i < steps.length; i++) {
     const pt = steps[i];
-    const name = pt.locationName || 'Corridor';
+    // Use tolerance to keep segments together if name splits momentarily
+    const name = pt.locationName || currentSegment.name;
 
     if (name !== currentSegment.name) {
       currentSegment.end = steps[i - 1];
@@ -318,25 +321,35 @@ const buildStepSummary = (steps = []) => {
   }
   segments.push(currentSegment);
 
-  // Convert segments to natural text with turns
+  // Convert segments to natural text with screen-relative directions
   return segments.map((seg, idx) => {
     const isLast = idx === segments.length - 1;
     const locName = formatNodeLabel({ name: seg.name }).replace(/_/g, ' ');
 
     if (idx === 0) return `Start at ${locName}.`;
 
-    // Determine turn from previous segment
-    const prevSeg = segments[idx - 1];
-    const turn = calculateTurn(prevSeg.start, prevSeg.end, seg.end);
+    // Determine direction of the CURRENT segment
+    const dir = getSegmentDirection(seg.start, seg.end);
+    let action = 'Head';
 
-    // If we are just continuing in the same named area (unlikely due to segmentation logic, but possible if names map to same label)
-    if (prevSeg.name === seg.name) return `Continue along ${locName}.`;
+    if (idx > 0) {
+      // Determine relative turn based on absolute direction (Screen Relative)
+      // This matches user expectation for 2D maps better than egocentric turns
+      switch (dir) {
+        case 'East': action = 'Turn right'; break;
+        case 'West': action = 'Turn left'; break;
+        case 'North': action = 'Head up'; break;
+        case 'South': action = 'Head down'; break;
+      }
 
-    const turnText = turn === 'straight' ? 'Go straight' : `Turn ${turn}`;
+      // If we are continuing in the same named area
+      const prevSeg = segments[idx - 1];
+      if (prevSeg.name === seg.name) return `Continue ${action.toLowerCase().replace('turn ', '')} along ${locName}.`;
+    }
 
-    if (isLast) return `${turnText} into ${locName} and arrive at destination.`;
+    if (isLast) return `${action} into ${locName} and arrive at destination.`;
 
-    return `${turnText} into ${locName} and go straight.`;
+    return `${action} into ${locName}.`;
   }).join(' ');
 };
 

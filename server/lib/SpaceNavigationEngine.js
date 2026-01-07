@@ -601,12 +601,26 @@ class SpaceNavigationEngine {
       // Simplify path (remove redundant points) - more aggressive simplification
       const simplifiedPath = this.simplifyPath(result.path, 15); // Increased tolerance from 5 to 15
 
-      // Enrich path with corridor names
-      const enrichedPath = simplifiedPath.map(p => {
-        const corridor = this.getCorridorForPoint(p.x, p.y, floor);
+      // Enrich path with corridor names (Stable Logic)
+      let lastKnownLocation = 'Start';
+
+      const enrichedPath = simplifiedPath.map((p, idx) => {
+        // Use tolerance to find corridor even if point is slightly on the edge (e.g. from simplification)
+        const corridor = this.getCorridorForPoint(p.x, p.y, floor, 20); // 20px tolerance
+
+        let locationName;
+        if (corridor) {
+          locationName = (corridor.displayName || corridor.name);
+          lastKnownLocation = locationName;
+        } else {
+          // If in a gap/seam, assume we differ to the previous known location
+          // This prevents "Corridor" flickering between two named halls
+          locationName = lastKnownLocation;
+        }
+
         return {
           ...p,
-          locationName: corridor ? (corridor.displayName || corridor.name) : 'Corridor'
+          locationName
         };
       });
 
@@ -711,14 +725,73 @@ class SpaceNavigationEngine {
   /**
    * Get the corridor that contains a specific point
    */
-  getCorridorForPoint(x, y, floor) {
+  /**
+   * Get the corridor that contains a specific point, with tolerance
+   */
+  getCorridorForPoint(x, y, floor, tolerance = 10) {
     const floorCorridors = this.getCorridors(floor);
+
+    // 1. Strict containment check
     for (const corridor of floorCorridors) {
       if (this.agent.isPointInPolygon(x, y, corridor.polygon)) {
         return corridor;
       }
     }
+
+    // 2. Tolerance check (nearest corridor within tolerance)
+    let bestCorridor = null;
+    let minDistance = Infinity;
+
+    for (const corridor of floorCorridors) {
+      if (corridor.polygon.length < 2) continue;
+
+      for (let i = 0; i < corridor.polygon.length; i++) {
+        const p1 = corridor.polygon[i];
+        const p2 = corridor.polygon[(i + 1) % corridor.polygon.length];
+
+        // Distance to line segment
+        const dist = this.pointToSegmentDistance(x, y, p1[0], p1[1], p2[0], p2[1]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestCorridor = corridor;
+        }
+      }
+    }
+
+    if (minDistance <= tolerance) {
+      return bestCorridor;
+    }
+
     return null;
+  }
+
+  // Helper distance function
+  pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = lenSq !== 0 ? dot / lenSq : -1;
+
+    let xx, yy;
+
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
 
