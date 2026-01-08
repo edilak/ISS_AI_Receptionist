@@ -1,157 +1,109 @@
 {
   "corridors": [
     {
-      "id": "c_vertical_left",
-      "name": "Left Hall",
+      "id": "corridor_1767842542563",
+      "name": "Left Corridor",
       "floor": 1,
       "polygon": [
         [
-          110,
-          150
+          525,
+          650
         ],
         [
-          190,
-          150
+          475,
+          650
         ],
         [
-          190,
-          610
+          475,
+          1075
         ],
         [
-          110,
-          610
+          525,
+          1075
+        ],
+        [
+          525,
+          850
+        ],
+        [
+          525,
+          775
+        ],
+        [
+          525,
+          650
         ]
       ],
       "type": "corridor"
     },
     {
-      "id": "c_horizontal_bottom",
-      "name": "Bottom Hall",
+      "id": "corridor_1767842583489",
+      "name": "Main Corridor",
       "floor": 1,
       "polygon": [
         [
-          110,
-          610
+          525,
+          850
         ],
         [
-          690,
-          610
+          2075,
+          850
         ],
         [
-          690,
-          690
+          2075,
+          775
         ],
         [
-          110,
-          690
+          525,
+          775
+        ],
+        [
+          525,
+          850
         ]
       ],
       "type": "corridor"
     },
     {
-      "id": "c_vertical_right",
-      "name": "Right Hall",
+      "id": "corridor_1767842631593",
+      "name": "Right Corridor",
       "floor": 1,
       "polygon": [
         [
-          610,
-          150
+          2075,
+          775
         ],
         [
-          690,
-          150
+          2075,
+          400
         ],
         [
-          690,
-          690
+          2150,
+          400
         ],
         [
-          610,
-          690
-        ]
-      ],
-      "type": "corridor"
-    },
-    {
-      "id": "corridor_1767757559790",
-      "name": "Lobby",
-      "floor": 1,
-      "polygon": [
-        [
-          610,
-          690
+          2150,
+          775
         ],
         [
-          610,
-          790
+          2150,
+          825
         ],
         [
-          770,
-          790
+          2150,
+          1125
         ],
         [
-          770,
-          730
+          2075,
+          1125
         ],
         [
-          690,
-          730
+          2075,
+          850
         ],
         [
-          690,
-          690
-        ],
-        [
-          690,
-          690
-        ],
-        [
-          690,
-          690
-        ],
-        [
-          610,
-          690
-        ]
-      ],
-      "type": "corridor"
-    },
-    {
-      "id": "corridor_1767765753277",
-      "name": "Main Hall",
-      "floor": 1,
-      "polygon": [
-        [
-          190,
-          150
-        ],
-        [
-          410,
-          150
-        ],
-        [
-          410,
-          410
-        ],
-        [
-          360,
-          410
-        ],
-        [
-          360,
-          200
-        ],
-        [
-          190,
-          200
-        ],
-        [
-          190,
-          150
-        ],
-        [
-          190,
-          150
+          2075,
+          775
         ]
       ],
       "type": "corridor"
@@ -159,41 +111,114 @@
   ],
   "destinations": [
     {
-      "id": "start_point",
-      "name": "Start Point",
-      "zone": "zone_start",
+      "id": "dest_1767841845451",
+      "name": "AHU Room",
+      "zone": "ahu_room",
       "floor": 1,
-      "x": 150,
-      "y": 150
-    },
-    {
-      "id": "dest_end_point",
-      "name": "End Point",
-      "zone": "zone_end",
-      "floor": 1,
-      "x": 650,
-      "y": 150,
+      "x": 500,
+      "y": 1075,
       "facing": "south"
     },
     {
-      "id": "dest_1767757595471",
-      "name": "Toilet",
-      "zone": "toilet",
+      "id": "dest_1767841878356",
+      "name": "Lift Lobby",
+      "zone": "lift_lobby",
       "floor": 1,
-      "x": 770,
-      "y": 760,
+      "x": 2150,
+      "y": 800,
       "facing": "east"
     },
     {
-      "id": "dest_1767765768311",
-      "name": "Conference Room",
-      "zone": "conference_room",
+      "id": "dest_1767841929624",
+      "name": "Female Toilet",
+      "zone": "female_toilet",
       "floor": 1,
-      "x": 410,
-      "y": 330,
+      "x": 2150,
+      "y": 425,
       "facing": "east"
+    },
+    {
+      "id": "dest_1767841973134",
+      "name": "Zone 6",
+      "zone": "zone_6",
+      "floor": 1,
+      "x": 1250,
+      "y": 850,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767844964192",
+      "name": "Zone 2",
+      "zone": "zone_2",
+      "floor": 1,
+      "x": 500,
+      "y": 650,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767844989508",
+      "name": "Zone 3",
+      "zone": "zone_3",
+      "floor": 1,
+      "x": 475,
+      "y": 675,
+      "facing": "west"
+    },
+    {
+      "id": "dest_1767845004780",
+      "name": "Zone 5",
+      "zone": "zone_5",
+      "floor": 1,
+      "x": 475,
+      "y": 775,
+      "facing": "west"
+    },
+    {
+      "id": "dest_1767845060233",
+      "name": "Telephone Equipment Room",
+      "zone": "tel_equipment_room",
+      "floor": 1,
+      "x": 750,
+      "y": 775,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767845087391",
+      "name": "Zone 6",
+      "zone": "zone_6",
+      "floor": 1,
+      "x": 1700,
+      "y": 850,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767845101733",
+      "name": "Zone 7",
+      "zone": "zone_7",
+      "floor": 1,
+      "x": 1875,
+      "y": 850,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767845144279",
+      "name": "Zone 1",
+      "zone": "zone_1",
+      "floor": 1,
+      "x": 1400,
+      "y": 775,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767845168974",
+      "name": "Zone 1",
+      "zone": "zone_1",
+      "floor": 1,
+      "x": 1875,
+      "y": 775,
+      "facing": "north"
     }
   ],
-  "gridSize": 10,
-  "savedAt": "2026-01-07T06:03:28.769Z"
+  "gridSize": 25,
+  "savedAt": "2026-01-08T04:06:20.916Z"
 }

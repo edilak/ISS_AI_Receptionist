@@ -312,15 +312,26 @@ const SpaceEditor = ({ onClose, onSave }) => {
     };
   };
 
-  // Handle mouse move
+  // Handle mouse move - THROTTLED to reduce re-renders
+  const lastMoveTime = useRef(0);
   const handleMouseMove = (event) => {
-    // Determine coordinate source
+    // Throttle to ~60fps (16ms) during non-drag, no throttle during drag for smoothness
+    const now = Date.now();
+    if (!isDragging && now - lastMoveTime.current < 16) return;
+    lastMoveTime.current = now;
+
     const coords = getSVGCoordinates(event);
 
     if (coords) {
-      setMousePosition(coords);
+      // Only update mouse position if significantly changed (reduces re-renders)
+      setMousePosition(prev => {
+        if (!prev || Math.abs(prev.x - coords.x) > 1 || Math.abs(prev.y - coords.y) > 1) {
+          return coords;
+        }
+        return prev;
+      });
 
-      // Edge hover detection
+      // Edge hover detection - DISABLED during drag for performance
       if (editorMode === 'polygon' && selectedCorridorId && !isDragging) {
         const selectedCorridor = corridors.find(c => c.id === selectedCorridorId);
         if (selectedCorridor) {
@@ -329,32 +340,28 @@ const SpaceEditor = ({ onClose, onSave }) => {
         } else {
           setHoveredEdge(null);
         }
-      } else {
-        setHoveredEdge(null);
       }
 
-      // Handle dragging
+      // Handle dragging - FIX: coords are already the target, no offset needed here
+      // The offset is calculated when drag STARTS to keep point under cursor
       if (isDragging) {
         if (dragType === 'polygon-point' && dragCorridorId !== null && dragIndex !== null) {
+          const newX = snapToGridCoord(coords.x - dragOffset.x);
+          const newY = snapToGridCoord(coords.y - dragOffset.y);
           setCorridors(prev => prev.map(corridor => {
             if (corridor.id === dragCorridorId) {
               const newPolygon = [...corridor.polygon];
-              newPolygon[dragIndex] = [
-                snapToGridCoord(coords.x + dragOffset.x),
-                snapToGridCoord(coords.y + dragOffset.y)
-              ];
+              newPolygon[dragIndex] = [newX, newY];
               return { ...corridor, polygon: newPolygon };
             }
             return corridor;
           }));
         } else if (dragType === 'destination' && selectedDestinationId !== null) {
+          const newX = snapToGridCoord(coords.x - dragOffset.x);
+          const newY = snapToGridCoord(coords.y - dragOffset.y);
           setDestinations(prev => prev.map(dest => {
             if (dest.id === selectedDestinationId) {
-              return {
-                ...dest,
-                x: snapToGridCoord(coords.x + dragOffset.x),
-                y: snapToGridCoord(coords.y + dragOffset.y)
-              };
+              return { ...dest, x: newX, y: newY };
             }
             return dest;
           }));
@@ -888,7 +895,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
         >
           {/* Destination marker */}
           <circle
-            r={isSelected ? 15 : 12}
+            r={isSelected ? 10 : 8}
             fill={isSelected ? '#ff4444' : '#ff6b6b'}
             stroke="white"
             strokeWidth="3"

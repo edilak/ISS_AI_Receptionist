@@ -107,13 +107,13 @@
       "floor": 1,
       "name": "First Floor",
       "image": {
-        "url": "/images/test_space_map_aligned.svg",
-        "width": 800,
-        "height": 800,
-        "format": "svg",
-        "naturalWidth": 800,
-        "naturalHeight": 800,
-        "aspectRatio": 1
+        "url": "/images/building8_2d_wide.png",
+        "width": 2464,
+        "height": 1728,
+        "format": "png",
+        "naturalWidth": 2464,
+        "naturalHeight": 1728,
+        "aspectRatio": 1.4259
       },
       "scale": {
         "pixelsPerMeter": 12,

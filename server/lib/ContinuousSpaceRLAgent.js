@@ -239,8 +239,23 @@ class ContinuousSpaceRLAgent {
         const gy = Math.floor(destination.y / this.options.gridResolution);
 
         if (gx >= 0 && gx < width && gy >= 0 && gy < height) {
-            // Goal State Value = 0 (Cost is 0)
-            values[gy * width + gx] = 0;
+            // Check if exact destination is navigable
+            if (this.navigableGrid[gy * width + gx] === 1) {
+                values[gy * width + gx] = 0;
+                console.log(`   📍 Destination ${destination.name} at grid (${gx},${gy}) is navigable`);
+            } else {
+                // If not navigable (e.g. inside wall), snap to nearest valid cell
+                // This fixes the issue where path cannot be found TO a point, but can be found FROM it.
+                // (Start points are auto-snapped by findPath, but Destinations used as VI seeds were not)
+                console.log(`   ⚠️ Destination ${destination.name} at grid (${gx},${gy}) is NOT navigable, searching nearby...`);
+                const snapped = this.findNearestNavigableGrid(gx, gy);
+                if (snapped) {
+                    values[snapped.y * width + snapped.x] = 0;
+                    console.log(`   📍 Snapped destination ${destination.name} from (${gx},${gy}) to (${snapped.x},${snapped.y})`);
+                } else {
+                    console.warn(`   ❌ Could not find ANY reachable point for destination ${destination.name}`);
+                }
+            }
         }
 
         const gamma = this.options.discountFactor;
@@ -280,15 +295,15 @@ class ContinuousSpaceRLAgent {
 
                     // Wall proximity penalty (Threshold / Plateau approach)
                     // If we are "safe" (clearance > threshold), no penalty -> standard Shortest Path
-                    // If we are close to wall, huge penalty.
-                    // This creates a "highway" in the middle of corridors where the agent can take straight lines.
+                    // If we are close to wall, small penalty.
+                    // REDUCED for narrow corridors - original values caused oscillation
                     const clearance = this.clearanceMap[idx];
-                    const SAFE_DISTANCE = 3; // ~60px
+                    const SAFE_DISTANCE = 1; // Reduced from 3 - only penalize cells DIRECTLY adjacent to walls
 
                     let wallPenalty = 0;
                     if (clearance < SAFE_DISTANCE) {
-                        // Exponential penalty for getting too close to walls
-                        wallPenalty = Math.pow(SAFE_DISTANCE - clearance, 2) * 5;
+                        // Mild penalty for wall-adjacent cells
+                        wallPenalty = (SAFE_DISTANCE - clearance) * 2; // Reduced from 5
                     }
 
                     // Check all neighbors
@@ -369,6 +384,12 @@ class ContinuousSpaceRLAgent {
         const maxSteps = 1000;
         let currentVal = valueMap[cy * this.gridWidth + cx];
 
+        // Debug: Check if start position has a valid value (connected to destination)
+        console.log(`   🔍 Start grid (${cx},${cy}) has value: ${currentVal.toFixed(2)}`);
+        if (currentVal <= -99999) {
+            console.log(`   ❌ Start position value is -100000, meaning it's NOT connected to destination in the value map!`);
+        }
+
         while ((cx !== targetX || cy !== targetY) && steps < maxSteps) {
             steps++;
 
@@ -434,8 +455,8 @@ class ContinuousSpaceRLAgent {
     }
 
     findNearestNavigableGrid(x, y) {
-        // Spiral search
-        for (let r = 1; r < 10; r++) {
+        // Spiral search with larger radius for narrow corridors
+        for (let r = 1; r < 25; r++) {
             for (let dy = -r; dy <= r; dy++) {
                 for (let dx = -r; dx <= r; dx++) {
                     const nx = x + dx;
