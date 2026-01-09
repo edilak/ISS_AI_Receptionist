@@ -243,15 +243,43 @@ const PathMap = ({ pathData, onClose, language }) => {
   const renderSpaceNavPath = () => {
     if (!isSpaceNavPath) return null;
 
-    const svgPath = pathData.visualization?.svgPath || pathData.path?.svgPath;
-    const arrows = pathData.visualization?.arrows || [];
+    // Support multi-floor paths
+    const displayFloor = getDisplayFloor();
+    const floorPaths = pathData.visualization?.floorPaths || {};
+    const floorArrows = pathData.visualization?.floorArrows || {};
+    
+    // Select path for current floor, or fallback to single path
+    const svgPath = floorPaths[displayFloor] || pathData.visualization?.svgPath || pathData.path?.svgPath;
+    
+    // Select arrows for current floor, or fallback
+    const arrows = floorArrows[displayFloor] || pathData.visualization?.arrows || [];
+    
     const animation = pathData.visualization?.animation || {};
     const destination = pathData.destination || {};
 
+    // Get start/end info
+    const startFloor = pathData.from?.floor ?? 1;
+    const endFloor = pathData.to?.floor ?? 1;
+    
+    // Only show Start marker if we are on the start floor
+    const showStart = displayFloor === startFloor;
+    
+    // Only show End marker if we are on the end floor
+    const showEnd = displayFloor === endFloor;
+
     // Get start position from smoothPath or first point
     const smoothPath = pathData.path?.smoothPath || [];
-    const startPoint = smoothPath[0] || { x: 0, y: 0 };
-    const endPoint = smoothPath[smoothPath.length - 1] || destination;
+    // If multi-floor, we might need to find start/end points for THIS floor from the path array
+    // But for simplicity, we rely on the SVG path which should cover the correct area
+    
+    // For markers, we use the global start/end if on relevant floor
+    const startPoint = { x: pathData.from.pixelX || pathData.from.x, y: pathData.from.pixelY || pathData.from.y };
+    const endPoint = { x: pathData.to.pixelX || pathData.to.x, y: pathData.to.pixelY || pathData.to.y };
+
+    // If we don't have an SVG path for this floor, show nothing (unless it's a fallback scenario)
+    if (!svgPath && Object.keys(floorPaths).length > 0) {
+       return null;
+    }
 
     const pathLength = animation.totalLength || 1000;
     const animatedDashOffset = pathLength * (1 - pathAnimationProgress / 100);
@@ -284,7 +312,6 @@ const PathMap = ({ pathData, onClose, language }) => {
           style={{ transition: 'stroke-dashoffset 0.1s linear' }}
         />
 
-        {/* Direction arrows along path - sparse and subtle */}
         {/* Direction arrows along path */}
         {arrows.map((arrow, idx) => (
           <g
@@ -301,44 +328,46 @@ const PathMap = ({ pathData, onClose, language }) => {
           </g>
         ))}
 
-        {/* Start marker */}
-        <g className="start-marker">
-          <circle
-            cx={startPoint.x}
-            cy={startPoint.y}
-            r="20"
-            fill="#4CAF50"
-            opacity="0.3"
-          />
-          <circle
-            cx={startPoint.x}
-            cy={startPoint.y}
-            r="14"
-            fill="#4CAF50"
-            stroke="white"
-            strokeWidth="3"
-          />
-          <text
-            x={startPoint.x}
-            y={startPoint.y + 5}
-            textAnchor="middle"
-            fill="white"
-            fontSize="12"
-            fontWeight="bold"
-          >
-            S
-          </text>
-        </g>
+        {/* Start marker - only on start floor */}
+        {showStart && (
+          <g className="start-marker">
+            <circle
+              cx={startPoint.x}
+              cy={startPoint.y}
+              r="20"
+              fill="#4CAF50"
+              opacity="0.3"
+            />
+            <circle
+              cx={startPoint.x}
+              cy={startPoint.y}
+              r="14"
+              fill="#4CAF50"
+              stroke="white"
+              strokeWidth="3"
+            />
+            <text
+              x={startPoint.x}
+              y={startPoint.y + 5}
+              textAnchor="middle"
+              fill="white"
+              fontSize="12"
+              fontWeight="bold"
+            >
+              S
+            </text>
+          </g>
+        )}
 
-        {/* End marker */}
-        {pathAnimationProgress >= 80 && (
+        {/* End marker - only on end floor */}
+        {showEnd && pathAnimationProgress >= 80 && (
           <g
             className="end-marker"
             opacity={(pathAnimationProgress - 80) / 20}
           >
             <circle
-              cx={endPoint.pixelX || endPoint.x}
-              cy={endPoint.pixelY || endPoint.y}
+              cx={endPoint.x}
+              cy={endPoint.y}
               r="22"
               fill="#F44336"
               opacity="0.3"
@@ -351,16 +380,16 @@ const PathMap = ({ pathData, onClose, language }) => {
               />
             </circle>
             <circle
-              cx={endPoint.pixelX || endPoint.x}
-              cy={endPoint.pixelY || endPoint.y}
+              cx={endPoint.x}
+              cy={endPoint.y}
               r="16"
               fill="#F44336"
               stroke="white"
               strokeWidth="3"
             />
             <text
-              x={endPoint.pixelX || endPoint.x}
-              y={(endPoint.pixelY || endPoint.y) + 5}
+              x={endPoint.x}
+              y={endPoint.y + 5}
               textAnchor="middle"
               fill="white"
               fontSize="12"
@@ -370,8 +399,8 @@ const PathMap = ({ pathData, onClose, language }) => {
             </text>
             {/* Destination label */}
             <text
-              x={endPoint.pixelX || endPoint.x}
-              y={(endPoint.pixelY || endPoint.y) - 30}
+              x={endPoint.x}
+              y={endPoint.y - 30}
               textAnchor="middle"
               fill="white"
               fontSize="14"
@@ -386,41 +415,39 @@ const PathMap = ({ pathData, onClose, language }) => {
     );
   };
 
-  // Update floor image - show destination floor (or most common floor in path)
+  // Update floor image when displayFloor changes (including when user selects different floor)
   useEffect(() => {
-    if (pathData && pathData.path && Array.isArray(pathData.path) && pathData.path.length > 0 && floorPlanData) {
-      // Handle both old and new data structures - with safe access
-      const destinationFloor = pathData?.to?.floor ?? pathData?.destination?.floor ?? pathData?.path?.[pathData.path.length - 1]?.floor ?? 1;
-      const startFloor = pathData?.from?.floor ?? pathData?.path?.[0]?.floor ?? 1;
+    if (!floorPlanData) return;
 
-      // Count floors in path to see which floor has most steps
-      const floorCounts = {};
-      pathData.path.forEach(step => {
-        const stepFloor = step.floor ?? 1;
-        floorCounts[stepFloor] = (floorCounts[stepFloor] || 0) + 1;
-      });
-
-      // Choose floor: destination if path ends there, otherwise most common floor
-      let displayFloor = destinationFloor;
-      if (floorCounts[startFloor] > (floorCounts[destinationFloor] || 0) && pathData.path.length > 2) {
-        displayFloor = startFloor;
+    // Get current display floor
+    const getCurrentDisplayFloor = () => {
+      if (selectedFloor !== null) return selectedFloor;
+      if (pathData && pathData.to && pathData.to.floor !== undefined) return pathData.to.floor;
+      if (pathData && pathData.path && pathData.path.length > 0) {
+        const floorsInPath = [...new Set(pathData.path.map(step => step.floor).filter(f => f !== undefined && f !== null))];
+        if (floorsInPath.length > 0) return floorsInPath[0];
       }
+      return null;
+    };
 
-      console.log('PathMap: Display floor:', displayFloor, '(Destination:', destinationFloor, ', Start:', startFloor, ')');
+    const displayFloor = getCurrentDisplayFloor();
+    
+    if (displayFloor !== null) {
+      console.log('PathMap: Updating floor image for floor:', displayFloor);
       const floorInfo = floorPlanData.floors.find(f => f.floor === displayFloor);
-      if (floorInfo) {
+      if (floorInfo && floorInfo.image) {
         console.log('PathMap: Found floor plan image:', floorInfo.image.url);
         setCurrentFloorImage(floorInfo.image.url);
       } else {
         // Fallback to floor 1 or first available floor
         const fallbackFloor = floorPlanData.floors.find(f => f.floor === 1) || floorPlanData.floors[0];
-        if (fallbackFloor) {
+        if (fallbackFloor && fallbackFloor.image) {
           console.log('PathMap: Using fallback floor:', fallbackFloor.image.url);
           setCurrentFloorImage(fallbackFloor.image.url);
         }
       }
     }
-  }, [pathData, floorPlanData]);
+  }, [selectedFloor, pathData, floorPlanData]);
 
   const formatTime = (minutes) => {
     if (language === 'zh-HK' || language === 'zh-CN') {

@@ -107,6 +107,110 @@
         ]
       ],
       "type": "corridor"
+    },
+    {
+      "id": "corridor_1767928709172",
+      "name": "Right Corridor",
+      "floor": 0,
+      "polygon": [
+        [
+          1970,
+          340
+        ],
+        [
+          1970,
+          580
+        ],
+        [
+          2010,
+          580
+        ],
+        [
+          2010,
+          710
+        ],
+        [
+          2010,
+          790
+        ],
+        [
+          2010,
+          1080
+        ],
+        [
+          2090,
+          1080
+        ],
+        [
+          2080,
+          340
+        ],
+        [
+          2030,
+          340
+        ]
+      ],
+      "type": "corridor"
+    },
+    {
+      "id": "corridor_1767930847480",
+      "name": "Upper Corridor",
+      "floor": 0,
+      "polygon": [
+        [
+          1970,
+          460
+        ],
+        [
+          170,
+          460
+        ],
+        [
+          170,
+          510
+        ],
+        [
+          370,
+          510
+        ],
+        [
+          470,
+          530
+        ],
+        [
+          1780,
+          530
+        ],
+        [
+          1780,
+          710
+        ],
+        [
+          1870,
+          710
+        ],
+        [
+          1870,
+          580
+        ],
+        [
+          1970,
+          580
+        ],
+        [
+          1970,
+          560
+        ],
+        [
+          1970,
+          530
+        ],
+        [
+          1970,
+          500
+        ]
+      ],
+      "type": "corridor"
     }
   ],
   "destinations": [
@@ -217,8 +321,80 @@
       "x": 1875,
       "y": 775,
       "facing": "north"
+    },
+    {
+      "id": "dest_1767852982588",
+      "name": "Common Pantry",
+      "zone": "common_pantry",
+      "floor": 1,
+      "x": 2125,
+      "y": 1125,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767853042017",
+      "name": "Male Toilet",
+      "zone": "male_toilet",
+      "floor": 1,
+      "x": 2150,
+      "y": 625,
+      "facing": "east"
+    },
+    {
+      "id": "dest_1767853089928",
+      "name": "AHU Room 2",
+      "zone": "ahu_room_2",
+      "floor": 1,
+      "x": 2125,
+      "y": 400,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767928742567",
+      "name": "AHU Room Ground",
+      "zone": "ahu_room_ground",
+      "floor": 0,
+      "x": 2060,
+      "y": 340,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767928762992",
+      "name": "Lift Lobby",
+      "zone": "lift_lobby",
+      "floor": 0,
+      "x": 2090,
+      "y": 760,
+      "facing": "east"
+    },
+    {
+      "id": "dest_1767930929652",
+      "name": "Unit 2",
+      "zone": "unit_2",
+      "floor": 0,
+      "x": 260,
+      "y": 460,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767930953232",
+      "name": "Unit 7",
+      "zone": "unit_7",
+      "floor": 0,
+      "x": 1150,
+      "y": 460,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767945922215",
+      "name": "Unit 6",
+      "zone": "unit_6",
+      "floor": 0,
+      "x": 910,
+      "y": 460,
+      "facing": "north"
     }
   ],
-  "gridSize": 25,
-  "savedAt": "2026-01-08T04:06:20.916Z"
+  "gridSize": 10,
+  "savedAt": "2026-01-09T08:09:17.901Z"
 }

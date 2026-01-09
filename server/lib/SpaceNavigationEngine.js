@@ -136,15 +136,19 @@ class SpaceNavigationEngine {
 
   /**
    * Update agent with current environment
+   * Now includes ALL floors (0 and 1) so agent can navigate on both
    */
   updateAgentEnvironment() {
-    // Filter corridors/destinations for current floor
-    const floor1Corridors = this.corridors.filter(c => c.floor === 1);
-    const floor1Destinations = this.destinations.filter(d => d.floor === 1);
+    // Include corridors and destinations from BOTH floor 0 and floor 1
+    const allCorridors = this.corridors.filter(c => c.floor === 0 || c.floor === 1);
+    const allDestinations = this.destinations.filter(d => d.floor === 0 || d.floor === 1);
+
+    console.log(`📐 Setting up agent environment with ${allCorridors.length} corridors (F0: ${this.corridors.filter(c => c.floor === 0).length}, F1: ${this.corridors.filter(c => c.floor === 1).length})`);
+    console.log(`📐 And ${allDestinations.length} destinations (F0: ${this.destinations.filter(d => d.floor === 0).length}, F1: ${this.destinations.filter(d => d.floor === 1).length})`);
 
     // Calculate actual dimensions from corridor data to ensure all areas are covered
     let maxX = 0, maxY = 0;
-    for (const corridor of floor1Corridors) {
+    for (const corridor of allCorridors) {
       if (corridor.polygon) {
         for (const point of corridor.polygon) {
           maxX = Math.max(maxX, point[0]);
@@ -152,20 +156,26 @@ class SpaceNavigationEngine {
         }
       }
     }
-    for (const dest of floor1Destinations) {
+    for (const dest of allDestinations) {
       maxX = Math.max(maxX, dest.x);
       maxY = Math.max(maxY, dest.y);
     }
 
-    // Add padding and ensure minimum size
+    // Use the maximum dimensions from both floor images
+    const floor0Width = this.imageDimensions[0]?.width || 2464;
+    const floor0Height = this.imageDimensions[0]?.height || 1728;
+    const floor1Width = this.imageDimensions[1]?.width || 2464;
+    const floor1Height = this.imageDimensions[1]?.height || 1728;
+
+    // Add padding and ensure minimum size covers both floors
     const dims = {
-      width: Math.max(maxX + 100, this.imageDimensions[1]?.width || 2400),
-      height: Math.max(maxY + 100, this.imageDimensions[1]?.height || 1800)
+      width: Math.max(maxX + 100, floor0Width, floor1Width),
+      height: Math.max(maxY + 100, floor0Height, floor1Height)
     };
 
-    console.log(`📐 Calculated navigation space: ${dims.width}x${dims.height} (from ${floor1Corridors.length} corridors)`);
+    console.log(`📐 Calculated navigation space: ${dims.width}x${dims.height} (from ${allCorridors.length} corridors across both floors)`);
 
-    this.agent.setEnvironment(floor1Corridors, floor1Destinations, dims);
+    this.agent.setEnvironment(allCorridors, allDestinations, dims);
 
     // Compute corridor centers after agent environment is set up
     // setEnvironment() calls buildGrid() which creates the clearance map
@@ -289,40 +299,53 @@ class SpaceNavigationEngine {
   }
 
   /**
-   * Find destination by name/zone
+   * Find all destinations matching a query (for multiple exit support)
+   * If floor is null/undefined, searches across all floors
    */
-  findDestination(query, floor = 1) {
+  findAllDestinations(query, floor = null) {
     const q = query.toLowerCase().trim();
+    const matches = [];
 
-    // If no destinations, return null
+    // If no destinations, return empty
     if (this.destinations.length === 0) {
-      console.warn('⚠️ No destinations defined');
-      return null;
+      return matches;
     }
 
+    // Helper to filter by floor if specified
+    // Important: floor 0 is a valid floor, so we need to check for null/undefined explicitly
+    const floorFilter = (d) => {
+      if (floor === null || floor === undefined) return true; // Search all floors
+      // Handle both number and string comparisons, and ensure 0 is handled correctly
+      const destFloor = typeof d.floor === 'number' ? d.floor : (d.floor !== undefined && d.floor !== null ? parseInt(d.floor) : null);
+      const searchFloor = typeof floor === 'number' ? floor : parseInt(floor);
+      // Both must be valid numbers and equal
+      if (destFloor === null || isNaN(destFloor) || isNaN(searchFloor)) return false;
+      return destFloor === searchFloor;
+    };
+
     // Direct zone match
-    let dest = this.destinations.find(d =>
-      d.floor === floor && d.zone?.toLowerCase() === q
+    const zoneMatches = this.destinations.filter(d =>
+      floorFilter(d) && d.zone?.toLowerCase() === q
     );
-    if (dest) return dest;
+    if (zoneMatches.length > 0) return zoneMatches;
 
     // Name exact match
-    dest = this.destinations.find(d =>
-      d.floor === floor && d.name?.toLowerCase() === q
+    const nameExactMatches = this.destinations.filter(d =>
+      floorFilter(d) && d.name?.toLowerCase() === q
     );
-    if (dest) return dest;
+    if (nameExactMatches.length > 0) return nameExactMatches;
 
     // Name contains query
-    dest = this.destinations.find(d =>
-      d.floor === floor && d.name?.toLowerCase().includes(q)
+    const nameContainsMatches = this.destinations.filter(d =>
+      floorFilter(d) && d.name?.toLowerCase().includes(q)
     );
-    if (dest) return dest;
+    if (nameContainsMatches.length > 0) return nameContainsMatches;
 
     // Zone contains query
-    dest = this.destinations.find(d =>
-      d.floor === floor && d.zone?.toLowerCase().includes(q)
+    const zoneContainsMatches = this.destinations.filter(d =>
+      floorFilter(d) && d.zone?.toLowerCase().includes(q)
     );
-    if (dest) return dest;
+    if (zoneContainsMatches.length > 0) return zoneContainsMatches;
 
     // Parse zone number (e.g., "zone 5" -> look for exit that might serve zone 5)
     const zoneMatch = q.match(/zone\s*(\d+)/i);
@@ -331,8 +354,8 @@ class SpaceNavigationEngine {
       const zoneNumPadded = zoneMatch[1].padStart(2, '0');
 
       // Try to find destination with zone info
-      dest = this.destinations.find(d =>
-        d.floor === floor && (
+      const zoneNumMatches = this.destinations.filter(d =>
+        floorFilter(d) && (
           d.zone?.toLowerCase().includes(`zone_${zoneNumPadded}`) ||
           d.zone?.toLowerCase().includes(`zone${zoneNumPadded}`) ||
           d.zone?.toLowerCase().includes(`zone ${zoneNum}`) ||
@@ -341,25 +364,25 @@ class SpaceNavigationEngine {
           d.name?.toLowerCase().includes(`zone${zoneNum}`)
         )
       );
-      if (dest) return dest;
+      if (zoneNumMatches.length > 0) return zoneNumMatches;
 
       // Fallback: if destinations don't have zone info, use position-based heuristic
       // Zones are typically numbered left-to-right, top-to-bottom
-      // Return destination that might be near the zone
-      const floorDests = this.destinations.filter(d => d.floor === floor);
+      const floorDests = this.destinations.filter(d => floorFilter(d));
       if (floorDests.length > 0) {
         // Sort by x coordinate and pick based on zone number
         const sorted = [...floorDests].sort((a, b) => a.x - b.x);
         const index = Math.min(zoneNum - 1, sorted.length - 1);
-        console.log(`📍 Using position-based heuristic for Zone ${zoneNum}: ${sorted[Math.max(0, index)]?.name}`);
-        return sorted[Math.max(0, index)];
+        const selected = sorted[Math.max(0, index)];
+        console.log(`📍 Using position-based heuristic for Zone ${zoneNum}: ${selected?.name}`);
+        return selected ? [selected] : [];
       }
     }
 
     // Facility match (lavatory, restroom, etc.)
     if (q.includes('lavatory') || q.includes('restroom') || q.includes('toilet') || q.includes('bathroom') || q.includes('lav')) {
-      dest = this.destinations.find(d =>
-        d.floor === floor && (
+      const facilityMatches = this.destinations.filter(d =>
+        floorFilter(d) && (
           d.name?.toLowerCase().includes('restroom') ||
           d.name?.toLowerCase().includes('lavatory') ||
           d.name?.toLowerCase().includes('lav') ||
@@ -367,13 +390,13 @@ class SpaceNavigationEngine {
           d.zone?.toLowerCase().includes('lav')
         )
       );
-      if (dest) return dest;
+      if (facilityMatches.length > 0) return facilityMatches;
     }
 
     // Lift/elevator match
     if (q.includes('lift') || q.includes('elevator') || q.includes('lobby')) {
-      dest = this.destinations.find(d =>
-        d.floor === floor && (
+      const liftMatches = this.destinations.filter(d =>
+        floorFilter(d) && (
           d.name?.toLowerCase().includes('lift') ||
           d.name?.toLowerCase().includes('elevator') ||
           d.name?.toLowerCase().includes('lobby') ||
@@ -381,44 +404,62 @@ class SpaceNavigationEngine {
           d.zone?.toLowerCase().includes('lobby')
         )
       );
-      if (dest) return dest;
+      if (liftMatches.length > 0) return liftMatches;
     }
 
     // Pantry match
     if (q.includes('pantry') || q.includes('kitchen') || q.includes('break room')) {
-      dest = this.destinations.find(d =>
-        d.floor === floor && (
+      const pantryMatches = this.destinations.filter(d =>
+        floorFilter(d) && (
           d.name?.toLowerCase().includes('pantry') ||
           d.zone?.toLowerCase().includes('pantry')
         )
       );
-      if (dest) return dest;
+      if (pantryMatches.length > 0) return pantryMatches;
     }
 
     // Exit number match (e.g., "exit 3" or just "3")
     const exitMatch = q.match(/(?:exit\s*)?(\d+)/i);
     if (exitMatch) {
       const exitNum = exitMatch[1];
-      dest = this.destinations.find(d =>
-        d.floor === floor && (
+      const exitMatches = this.destinations.filter(d =>
+        floorFilter(d) && (
           d.name?.toLowerCase().includes(`exit ${exitNum}`) ||
           d.name?.toLowerCase() === `exit ${exitNum}` ||
           d.name?.toLowerCase() === `exit${exitNum}`
         )
       );
-      if (dest) return dest;
+      if (exitMatches.length > 0) return exitMatches;
     }
 
-    console.warn(`⚠️ Destination "${query}" not found. Available: ${this.destinations.filter(d => d.floor === floor).map(d => d.name).join(', ')}`);
-    return null;
+    return matches;
+  }
+
+  /**
+   * Find destination by name/zone (returns first match for backward compatibility)
+   */
+  findDestination(query, floor = null) {
+    // If floor is not specified, search all floors
+    const allMatches = this.findAllDestinations(query, floor);
+    if (allMatches.length === 0) {
+      // Log available destinations for debugging
+      const floorDests = floor !== null && floor !== undefined 
+        ? this.destinations.filter(d => d.floor === floor)
+        : this.destinations;
+      const available = floorDests.map(d => `${d.name} (F${d.floor || '?'})`).join(', ');
+      console.warn(`⚠️ Destination "${query}" not found on floor ${floor !== null ? floor : 'any'}. Available: ${available}`);
+    }
+    return allMatches.length > 0 ? allMatches[0] : null;
   }
 
   /**
    * Get all exits for a zone (for multiple exit support)
+   * If floor is null/undefined, searches across all floors
    */
-  getZoneExits(zoneId, floor = 1) {
+  getZoneExits(zoneId, floor = null) {
+    const floorFilter = (d) => floor === null || floor === undefined || d.floor === floor;
     return this.destinations.filter(d =>
-      d.floor === floor && (
+      floorFilter(d) && (
         d.zone === zoneId ||
         d.zone?.toLowerCase().includes(zoneId.toLowerCase()) ||
         d.name?.toLowerCase().includes(zoneId.toLowerCase())
@@ -448,17 +489,57 @@ class SpaceNavigationEngine {
   }
 
   /**
-   * Find a valid start position within corridors
+   * Find exit closest to a destination point from multiple exits
+   * Used when selecting start position - choose exit that's closest to destination
    */
-  findStartPosition(query, floor = 1) {
+  findExitClosestToDestination(destX, destY, exits) {
+    if (exits.length === 0) return null;
+    if (exits.length === 1) return exits[0];
+
+    let closest = exits[0];
+    let minDist = Infinity;
+
+    for (const exit of exits) {
+      const dist = Math.sqrt((exit.x - destX) ** 2 + (exit.y - destY) ** 2);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = exit;
+      }
+    }
+
+    return closest;
+  }
+
+  /**
+   * Find a valid start position within corridors
+   * If multiple exits with same name exist, chooses the one closest to destination
+   */
+  findStartPosition(query, floor = 1, destinationPoint = null) {
     const q = query?.toLowerCase().trim() || '';
 
     // Try to find by query first
     if (q) {
-      // Check if it matches any destination
-      const dest = this.findDestination(query, floor);
-      if (dest && this.agent.isPointNavigable(dest.x, dest.y)) {
-        return { x: dest.x, y: dest.y, name: dest.name };
+      // Check if it matches any destination(s) - handle multiple exits
+      const allMatches = this.findAllDestinations(query, floor);
+      if (allMatches.length > 0) {
+        let selectedDest = null;
+        
+        // If multiple exits with same name and we have destination point, choose closest to destination
+        if (allMatches.length > 1 && destinationPoint) {
+          selectedDest = this.findExitClosestToDestination(
+            destinationPoint.x, 
+            destinationPoint.y, 
+            allMatches
+          );
+          console.log(`📍 Multiple exits found for "${query}", selected closest to destination: ${selectedDest.name} at (${selectedDest.x}, ${selectedDest.y})`);
+        } else {
+          // Single match or no destination point - use first match
+          selectedDest = allMatches[0];
+        }
+        
+        if (selectedDest && this.agent.isPointNavigable(selectedDest.x, selectedDest.y)) {
+          return { x: selectedDest.x, y: selectedDest.y, name: selectedDest.name };
+        }
       }
 
       // Entrance/lobby keywords - prioritize exact matches
@@ -534,45 +615,330 @@ class SpaceNavigationEngine {
    * Main navigation function: find path from start to destination
    */
   async navigate(startQuery, destQuery, options = {}) {
-    const { floor = 1, startX, startY } = options;
+    const { floor = null, startX, startY, startFloor = null, destFloor = null } = options; // Allow null to search all floors
 
-    // Find start position
-    let start = null;
-    if (startX && startY) {
-      start = { x: startX, y: startY, name: startQuery || 'Start' };
+    // Step 1: Find all possible destination candidates
+    // If destFloor is specified, search that floor first, otherwise search all floors
+    let allDestCandidates = [];
+    if (destFloor !== null && destFloor !== undefined) {
+      console.log(`🔍 Searching for "${destQuery}" on floor ${destFloor}`);
+      // Search specific floor first (including floor 0)
+      allDestCandidates = this.findAllDestinations(destQuery, destFloor);
+      console.log(`   Found ${allDestCandidates.length} candidates on floor ${destFloor}`);
+      // If not found, fallback to all floors
+      if (allDestCandidates.length === 0) {
+        console.log(`   No matches on floor ${destFloor}, searching all floors...`);
+        allDestCandidates = this.findAllDestinations(destQuery, null);
+        console.log(`   Found ${allDestCandidates.length} candidates across all floors`);
+      }
     } else {
-      start = this.findStartPosition(startQuery, floor);
+      // Search all floors
+      console.log(`🔍 Searching for "${destQuery}" across all floors`);
+      allDestCandidates = this.findAllDestinations(destQuery, null);
+      console.log(`   Found ${allDestCandidates.length} candidates`);
+    }
+    
+    let destCandidates = allDestCandidates.length > 0 
+      ? allDestCandidates 
+      : this.getZoneExits(destQuery, null); // Try zone exits across all floors
+
+    // If zone exits also needs floor, search common floors
+    if (destCandidates.length === 0) {
+      console.log(`   Trying zone exits on floors 0 and 1...`);
+      // Try floor 0 and 1 explicitly
+      const exits0 = this.getZoneExits(destQuery, 0);
+      const exits1 = this.getZoneExits(destQuery, 1);
+      console.log(`   Floor 0: ${exits0.length} exits, Floor 1: ${exits1.length} exits`);
+      destCandidates = exits0.concat(exits1);
     }
 
-    if (!start) {
+    // Step 2: Find all possible start candidates
+    let startCandidates = [];
+    if (startX && startY) {
+      // Explicit coordinates provided - need to determine floor
+      // Use startFloor hint if provided, otherwise detect from corridors
+      let detectedFloor = startFloor !== null ? startFloor : (floor || 1);
+      if (startFloor === null) {
+        for (const corridor of this.corridors) {
+          if (corridor.polygon && this.isPointInPolygon(startX, startY, corridor.polygon)) {
+            detectedFloor = corridor.floor !== undefined ? corridor.floor : 1;
+            break;
+          }
+        }
+      }
+      startCandidates = [{ x: startX, y: startY, name: startQuery || 'Start', floor: detectedFloor }];
+    } else if (startQuery) {
+      // Find all start positions matching the query
+      // If startFloor is specified, search that floor first
+      let allStartMatches = [];
+      if (startFloor !== null) {
+        allStartMatches = this.findAllDestinations(startQuery, startFloor);
+        // If not found, fallback to all floors
+        if (allStartMatches.length === 0) {
+          allStartMatches = this.findAllDestinations(startQuery, null);
+        }
+      } else {
+        allStartMatches = this.findAllDestinations(startQuery, null);
+      }
+      if (allStartMatches.length > 0) {
+        startCandidates = allStartMatches;
+      } else {
+        // Try zone exits for start (all floors)
+        const startZoneExits0 = this.getZoneExits(startQuery, 0);
+        const startZoneExits1 = this.getZoneExits(startQuery, 1);
+        const startZoneExits = startZoneExits0.concat(startZoneExits1);
+        if (startZoneExits.length > 0) {
+          startCandidates = startZoneExits;
+        } else {
+          // Fallback to findStartPosition - try both floors
+          const fallbackStart0 = this.findStartPosition(startQuery, 0, null);
+          const fallbackStart1 = this.findStartPosition(startQuery, 1, null);
+          if (fallbackStart0) {
+            startCandidates.push({ ...fallbackStart0, floor: 0 });
+          }
+          if (fallbackStart1) {
+            startCandidates.push({ ...fallbackStart1, floor: 1 });
+          }
+        }
+      }
+    } else {
+      // No start query - use fallback (try both floors)
+      const fallbackStart0 = this.findStartPosition('', 0, null);
+      const fallbackStart1 = this.findStartPosition('', 1, null);
+      if (fallbackStart0) {
+        startCandidates.push({ ...fallbackStart0, floor: 0 });
+      }
+      if (fallbackStart1) {
+        startCandidates.push({ ...fallbackStart1, floor: 1 });
+      }
+    }
+
+    if (startCandidates.length === 0) {
       return { success: false, error: 'Could not find a valid start position. Make sure corridors are defined.' };
     }
 
-    console.log(`📍 Start position: (${start.x.toFixed(0)}, ${start.y.toFixed(0)}) - ${start.name}`);
-
-    // Find destination
-    const destination = this.findDestination(destQuery, floor);
-    if (!destination) {
-      // Try to find multiple exits for zone
-      const exits = this.getZoneExits(destQuery, floor);
-      if (exits.length > 0) {
-        const nearest = this.findNearestExit(start.x, start.y, exits);
-        return this.findPathToDestination(start, nearest, floor);
-      }
-
+    if (destCandidates.length === 0) {
+      // List available destinations across all floors
+      const allDests = this.destinations.map(d => `${d.name} (F${d.floor || '?'})`).join(', ');
       return {
         success: false,
-        error: `Destination "${destQuery}" not found. Available destinations: ${this.destinations.filter(d => d.floor === floor).map(d => d.name).join(', ')}`
+        error: `Destination "${destQuery}" not found. Available destinations: ${allDests}`
       };
     }
 
-    // Check for multiple exits
-    const allExits = this.getZoneExits(destination.zone || destination.name, floor);
+    // Step 3: Smart selection
+    // If multiple start candidates with same name, choose one closest to destination
+    let start = null;
+    if (startCandidates.length === 1) {
+      start = startCandidates[0];
+      // Ensure floor is set
+      if (start.floor === undefined && start.floor === null) {
+        // Try to detect floor from corridors
+        for (const corridor of this.corridors) {
+          if (corridor.polygon && this.isPointInPolygon(start.x, start.y, corridor.polygon)) {
+            start.floor = corridor.floor !== undefined ? corridor.floor : 1;
+            break;
+          }
+        }
+        if (start.floor === undefined) start.floor = 1; // Default fallback
+      }
+    } else {
+      // Multiple start positions - use destination to choose best one
+      // Use first destination candidate as reference point
+      const refDest = destCandidates[0];
+      start = this.findExitClosestToDestination(refDest.x, refDest.y, startCandidates);
+      console.log(`📍 Multiple start positions found for "${startQuery}", selected closest to destination: ${start.name} at (${start.x}, ${start.y})`);
+    }
+
+    // If multiple destination candidates with same name, choose one closest to start
+    let destination = null;
+    if (destCandidates.length === 1) {
+      destination = destCandidates[0];
+    } else {
+      // Multiple destinations - use start to choose best one
+      destination = this.findNearestExit(start.x, start.y, destCandidates);
+      console.log(`📍 Multiple destinations found for "${destQuery}", selected closest to start: ${destination.name} at (${destination.x}, ${destination.y})`);
+    }
+
+    // Ensure both have floor information
+    const computedStartFloor = start.floor !== undefined && start.floor !== null ? start.floor : 1;
+    const computedDestFloor = destination.floor !== undefined && destination.floor !== null ? destination.floor : 1;
+
+    // Step 4: Also check zone exits in case destination has zone info (on destination's floor)
+    const allExits = this.getZoneExits(destination.zone || destination.name, computedDestFloor);
     const targetExit = allExits.length > 1
       ? this.findNearestExit(start.x, start.y, allExits)
       : destination;
 
-    return this.findPathToDestination(start, targetExit, floor);
+    // Ensure targetExit has all required properties
+    if (!targetExit.name) {
+      targetExit.name = targetExit.displayName || targetExit.id || destination.name || 'Unknown';
+    }
+    if (!targetExit.id) {
+      targetExit.id = destination.id || `dest_${Date.now()}`;
+    }
+    if (targetExit.floor === undefined || targetExit.floor === null) {
+      targetExit.floor = computedDestFloor;
+    }
+
+    // Ensure start has floor and required properties
+    if (start.floor === undefined || start.floor === null) {
+      start.floor = computedStartFloor;
+    }
+    if (!start.name) {
+      start.name = start.displayName || start.id || startQuery || 'Start';
+    }
+
+    console.log(`📍 Start position: (${start.x.toFixed(0)}, ${start.y.toFixed(0)}) - ${start.name} [Floor ${start.floor}]`);
+    console.log(`🎯 Destination: (${targetExit.x.toFixed(0)}, ${targetExit.y.toFixed(0)}) - ${targetExit.name} [Floor ${targetExit.floor}]`);
+
+    // Step 5: Check if start and destination are on different floors
+    const startFloorNum = Number(start.floor);
+    const destFloorNum = Number(targetExit.floor);
+    
+    console.log(`🔍 Floor comparison: Start=${startFloorNum} (${typeof start.floor}), Dest=${destFloorNum} (${typeof targetExit.floor})`);
+    
+    if (startFloorNum !== destFloorNum && !isNaN(startFloorNum) && !isNaN(destFloorNum)) {
+      console.log(`🛗 Multi-floor navigation detected: Floor ${startFloorNum} → Floor ${destFloorNum}`);
+      return this.findMultiFloorPath(start, targetExit);
+    } else {
+      console.log(`📍 Single-floor navigation: Both on Floor ${startFloorNum}`);
+    }
+
+    // Single floor navigation - use the floor of the start/destination
+    return this.findPathToDestination(start, targetExit, start.floor);
+  }
+
+  /**
+   * Handle multi-floor navigation (Start -> Lift -> Lift -> Destination)
+   */
+  async findMultiFloorPath(start, dest) {
+    const startFloor = start.floor !== undefined ? start.floor : 1;
+    const destFloor = dest.floor !== undefined ? dest.floor : 1;
+
+    console.log(`🔄 Calculating multi-floor path: ${start.name} (F${startFloor}) → ${dest.name} (F${destFloor})`);
+
+    // 1. Find Lift Lobby on Start Floor
+    const liftLobbyStartCandidates = this.findAllDestinations('Lift Lobby', startFloor);
+    let liftLobbyStart = null;
+    
+    if (liftLobbyStartCandidates.length > 0) {
+      liftLobbyStart = this.findNearestExit(start.x, start.y, liftLobbyStartCandidates);
+    } else {
+      const allLifts = this.destinations.filter(d => 
+        d.floor === startFloor && 
+        (d.name.toLowerCase().includes('lift') || d.name.toLowerCase().includes('elevator'))
+      );
+      if (allLifts.length > 0) {
+        liftLobbyStart = this.findNearestExit(start.x, start.y, allLifts);
+      }
+    }
+
+    if (!liftLobbyStart) {
+      return {
+        success: false,
+        error: `Could not find a Lift Lobby on Floor ${startFloor} to transfer floors.`
+      };
+    }
+
+    // 2. Find Lift Lobby on Destination Floor
+    const liftLobbyDestCandidates = this.findAllDestinations('Lift Lobby', destFloor);
+    let liftLobbyDest = null;
+
+    if (liftLobbyDestCandidates.length > 0) {
+       liftLobbyDest = this.findExitClosestToDestination(dest.x, dest.y, liftLobbyDestCandidates);
+    } else {
+       const allLifts = this.destinations.filter(d => 
+        d.floor === destFloor && 
+        (d.name.toLowerCase().includes('lift') || d.name.toLowerCase().includes('elevator'))
+      );
+      if (allLifts.length > 0) {
+        liftLobbyDest = this.findExitClosestToDestination(dest.x, dest.y, allLifts);
+      }
+    }
+
+    if (!liftLobbyDest) {
+      return {
+        success: false,
+        error: `Could not find a Lift Lobby on Destination Floor ${destFloor}.`
+      };
+    }
+
+    console.log(`📍 Route: ${start.name} → ${liftLobbyStart.name} (Lift) → ${liftLobbyDest.name} (Lift) → ${dest.name}`);
+
+    // 3. Calculate Path 1: Start -> Lift Lobby (Start Floor)
+    const liftStartTarget = { ...liftLobbyStart, name: `Lift to Floor ${destFloor}` };
+    const path1Result = this.findPathToDestination(start, liftStartTarget, startFloor);
+
+    if (!path1Result.success) {
+      return {
+        success: false,
+        error: `Could not find path to Lift Lobby on Floor ${startFloor}: ${path1Result.error}`
+      };
+    }
+
+    // 4. Calculate Path 2: Lift Lobby (Dest Floor) -> Destination
+    const liftDestStart = { ...liftLobbyDest, name: `Lift from Floor ${startFloor}` };
+    const path2Result = this.findPathToDestination(liftDestStart, dest, destFloor);
+
+    if (!path2Result.success) {
+      return {
+        success: false,
+        error: `Could not find path from Lift Lobby on Floor ${destFloor}: ${path2Result.error}`
+      };
+    }
+
+    // 5. Combine Results
+    // Add "Lift Transfer" virtual step
+    const liftStep = {
+      x: liftLobbyStart.x,
+      y: liftLobbyStart.y,
+      locationName: 'Elevator',
+      floor: startFloor, // Technically transition happens here
+      isFloorChange: true,
+      nextDirection: 'up' // or down, irrelevant
+    };
+
+    // Ensure path2 starts cleanly
+    const path2Clean = path2Result.path.map(p => ({ ...p, floor: destFloor }));
+
+    const combinedPath = [
+      ...path1Result.path.map(p => ({ ...p, floor: startFloor })),
+      liftStep,
+      ...path2Clean
+    ];
+    
+    // Create combined stats
+    const combinedStats = {
+      totalDistance: path1Result.stats.totalDistance + path2Result.stats.totalDistance,
+      originalPoints: path1Result.stats.originalPoints + path2Result.stats.originalPoints,
+      simplifiedPoints: path1Result.stats.simplifiedPoints + path2Result.stats.simplifiedPoints,
+      nodesExplored: (path1Result.nodesExplored || 0) + (path2Result.nodesExplored || 0)
+    };
+
+    // Store per-floor SVG paths
+    const floorPaths = {
+      [startFloor]: path1Result.svgPath,
+      [destFloor]: path2Result.svgPath
+    };
+    
+    // Store per-floor arrows
+    const floorArrows = {
+        [startFloor]: path1Result.arrows || [],
+        [destFloor]: path2Result.arrows || []
+    };
+
+    return {
+      success: true,
+      path: combinedPath,
+      svgPath: path1Result.svgPath, // Default
+      floorPaths: floorPaths,
+      floorArrows: floorArrows,
+      start: start,
+      destination: dest,
+      stats: combinedStats,
+      isMultiFloor: true
+    };
   }
 
   /**
@@ -583,17 +949,24 @@ class SpaceNavigationEngine {
       return { success: false, error: 'Invalid destination' };
     }
 
-    console.log(`🚀 Finding path: (${start.x.toFixed(0)}, ${start.y.toFixed(0)}) → ${destination.name} (${destination.x.toFixed(0)}, ${destination.y.toFixed(0)})`);
+    // Ensure destination has required properties
+    const destName = destination.name || destination.displayName || destination.id || 'Unknown';
+    const destId = destination.id || `dest_${Date.now()}`;
+    const destX = destination.x;
+    const destY = destination.y;
+    const destFloor = destination.floor !== undefined ? destination.floor : floor;
 
-    // Check if destination is navigable logic moved to inside agent.findPath()
-    let destX = destination.x;
-    let destY = destination.y;
+    if (destX === undefined || destY === undefined) {
+      return { success: false, error: `Invalid destination coordinates for ${destName}` };
+    }
+
+    console.log(`🚀 Finding path: (${start.x.toFixed(0)}, ${start.y.toFixed(0)}) → ${destName} (${destX.toFixed(0)}, ${destY.toFixed(0)}) [Floor ${destFloor}]`);
 
     // Use RL agent to find path
     const result = this.agent.findPath(
       start.x, start.y,
       destX, destY,
-      destination.id
+      destId
     );
 
     if (result.success) {
@@ -607,22 +980,24 @@ class SpaceNavigationEngine {
 
       // First, enrich ALL path points with corridor names (before simplification)
       // Use larger tolerance to ensure Main Corridor and other corridors are properly identified
+      // Use the actual destination floor, not the passed floor parameter
+      const actualFloor = destFloor !== undefined ? destFloor : floor;
       let lastKnownLocation = 'Start';
       const enrichedFullPath = result.path.map((p, idx) => {
         // Use larger tolerance (20px) to catch points near corridor boundaries
         // This ensures Main Corridor is properly identified even if points are slightly off
-        const corridor = this.getCorridorForPoint(p.x, p.y, floor, 20);
+        const corridor = this.getCorridorForPoint(p.x, p.y, actualFloor, 20);
         let locationName;
         if (corridor) {
           locationName = (corridor.displayName || corridor.name);
           lastKnownLocation = locationName;
         } else {
           // If no corridor found, check with even larger tolerance for Main Corridor
-          const mainCorridor = this.getCorridors(floor).find(c => 
+          const mainCorridor = this.getCorridors(actualFloor).find(c => 
             (c.name || '').toLowerCase().includes('main')
           );
           if (mainCorridor) {
-            const foundCorridor = this.getCorridorForPoint(p.x, p.y, floor, 50);
+            const foundCorridor = this.getCorridorForPoint(p.x, p.y, actualFloor, 50);
             if (foundCorridor && foundCorridor.id === mainCorridor.id) {
               locationName = mainCorridor.displayName || mainCorridor.name;
               lastKnownLocation = locationName;
@@ -633,15 +1008,16 @@ class SpaceNavigationEngine {
             locationName = lastKnownLocation;
           }
         }
-        return { ...p, locationName };
+        return { ...p, locationName, floor: actualFloor };
       });
 
       // Now, simplify PER CORRIDOR SEGMENT to preserve turn points at junctions
       // Increase tolerance to 20 to ensure long straight lines in center of corridors
       const simplifiedPath = this.simplifyPerSegment(enrichedFullPath, 20);
 
-      // Center the path along corridor centerlines for parallel, aesthetically pleasing routes
-      let enrichedPath = this.centerPathAlongCorridors(simplifiedPath);
+      // Use Aggressive Axis Snapping method
+      // This treats corridors as magnetic axes and snaps points to them globally
+      let enrichedPath = this.snapPathToCorridorAxes(simplifiedPath, actualFloor);
 
       // Ensure path turns to and connects with destination point
       enrichedPath = this.ensurePathReachesDestination(enrichedPath, destX, destY, floor);
@@ -660,12 +1036,12 @@ class SpaceNavigationEngine {
         svgPath,
         arrows,
         destination: {
-          id: destination.id,
-          name: destination.name,
+          id: destId,
+          name: destName,
           zone: destination.zone,
           x: destX,
           y: destY,
-          floor
+          floor: destFloor
         },
         start: {
           x: start.x,
@@ -681,7 +1057,7 @@ class SpaceNavigationEngine {
         algorithm: 'Continuous Space RL'
       };
     } else {
-      console.warn(`⚠️ Path not found to ${destination.name}`);
+      console.warn(`⚠️ Path not found to ${destName}`);
 
       // If we have a partial path, try to use it
       if (result.path && result.path.length > 2) {
@@ -691,11 +1067,11 @@ class SpaceNavigationEngine {
         const enrichedFullPath = result.path.map(p => {
           const corridor = this.getCorridorForPoint(p.x, p.y, floor, 5); // Sharp transition
           if (corridor) lastLoc = (corridor.displayName || corridor.name);
-          return { ...p, locationName: lastLoc };
+          return { ...p, locationName: lastLoc, floor: floor };
         });
 
         const simplifiedPath = this.simplifyPerSegment(enrichedFullPath);
-        let enrichedPath = this.centerPathAlongCorridors(simplifiedPath);
+        let enrichedPath = this.snapPathToCorridorAxes(simplifiedPath, floor);
 
         // Ensure path reaches destination even if partial
         enrichedPath = this.ensurePathReachesDestination(enrichedPath, destX, destY, floor);
@@ -741,7 +1117,7 @@ class SpaceNavigationEngine {
 
       return {
         success: false,
-        error: `Could not find navigable path to ${destination.name}. The RL agent may need more training, or the corridors may not connect properly.`,
+        error: `Could not find navigable path to ${destName}. The RL agent may need more training, or the corridors may not connect properly.`,
         partialPath: result.path
       };
     }
@@ -857,50 +1233,153 @@ class SpaceNavigationEngine {
   }
 
   /**
-   * Center each waypoint along the corridor centerline and force strict orthogonality
-   * Ensures paths are perfectly parallel to corridor walls with 90-degree turns only.
+   * Snap path points to the nearest corridor axis
+   * This ignores segment continuity and treats the floor as a grid of axes
+   * Handles transitions by finding the intersection of axes
    */
-  centerPathAlongCorridors(path) {
+  snapPathToCorridorAxes(path, floor = null) {
     if (path.length < 2) return path;
+    // Use provided floor, or try to get from path, or default to 1
+    const pathFloor = floor !== null ? floor : (path[0]?.floor ?? 1);
 
-    // Pass 1: Identify segments (sequences in the same corridor)
-    const segments = [];
-    let currentSeg = [path[0]];
-    for (let i = 1; i < path.length; i++) {
-      if (path[i].locationName === path[i - 1].locationName) {
-        currentSeg.push(path[i]);
+    // 1. Get all axes for this floor
+    const axes = [];
+    // Ensure centers are computed
+    if (!this.corridorCenters || this.corridorCenters.size === 0) {
+      this.computeAllCorridorCenters();
+    }
+
+    const floorCorridors = this.getCorridors(pathFloor);
+    console.log(`📐 snapPathToCorridorAxes: Floor ${pathFloor}, found ${floorCorridors.length} corridors`);
+    for (const corridor of floorCorridors) {
+      const centerData = this.corridorCenters.get(corridor.id);
+      if (centerData && centerData.computed) {
+        axes.push({
+          id: corridor.id,
+          orientation: centerData.orientation,
+          value: centerData.centerValue,
+          bounds: centerData.bounds
+        });
+        console.log(`  ✓ ${corridor.name}: ${centerData.orientation}, center=${centerData.centerValue.toFixed(0)}, bounds=[${centerData.bounds.minX.toFixed(0)},${centerData.bounds.maxX.toFixed(0)}]x[${centerData.bounds.minY.toFixed(0)},${centerData.bounds.maxY.toFixed(0)}]`);
       } else {
-        segments.push(currentSeg);
-        currentSeg = [path[i]];
+        console.log(`  ⚠ ${corridor.name}: No center data computed`);
       }
     }
-    segments.push(currentSeg);
 
-    // Pass 2: For each segment, determine corridor orientation and center it
-    const processedSegments = [];
-    for (const seg of segments) {
-      if (seg.length < 2) {
-        processedSegments.push(seg);
-        continue;
+    // 2. Snap each point to the best axis
+    const snappedPoints = path.map(p => {
+      // Find all axes that contain this point (with tolerance)
+      const containingAxes = axes.filter(axis => {
+        const padding = 25; // Generous padding to catch points near boundary
+        return p.x >= axis.bounds.minX - padding && 
+               p.x <= axis.bounds.maxX + padding &&
+               p.y >= axis.bounds.minY - padding && 
+               p.y <= axis.bounds.maxY + padding;
+      });
+
+      if (containingAxes.length === 0) return { ...p }; // No snap
+
+      // If multiple axes (intersection), find best fit
+      // If we have H and V axes, snap to intersection
+      const hAxis = containingAxes.find(a => a.orientation === 'horizontal');
+      const vAxis = containingAxes.find(a => a.orientation === 'vertical');
+
+      if (hAxis && vAxis) {
+        // Intersection: perfect snap
+        return { ...p, x: vAxis.value, y: hAxis.value, locationName: 'Intersection' };
       }
 
-      // Get corridor for this segment
-      const corridor = this.getCorridorForSegment(seg);
-      if (!corridor) {
-        processedSegments.push(seg);
-        continue;
+      if (hAxis) {
+        return { ...p, y: hAxis.value };
       }
-
-      // Determine corridor orientation (horizontal or vertical)
-      const orientation = this.getCorridorOrientation(corridor);
       
-      // Center the segment in the corridor
-      const centeredSeg = this.centerSegmentInCorridor(seg, corridor, orientation);
-      processedSegments.push(centeredSeg);
+      if (vAxis) {
+        return { ...p, x: vAxis.value };
+      }
+
+      return { ...p };
+    });
+
+    // 3. Simplify collinear points
+    const simplified = [snappedPoints[0]];
+    for (let i = 1; i < snappedPoints.length; i++) {
+      const prev = simplified[simplified.length - 1];
+      const curr = snappedPoints[i];
+      
+      // If same coords, skip
+      if (Math.abs(prev.x - curr.x) < 1 && Math.abs(prev.y - curr.y) < 1) continue;
+      
+      // If collinear with previous segment, replace last point
+      if (simplified.length > 1) {
+        const prevPrev = simplified[simplified.length - 2];
+        const dx1 = prev.x - prevPrev.x;
+        const dy1 = prev.y - prevPrev.y;
+        const dx2 = curr.x - prev.x;
+        const dy2 = curr.y - prev.y;
+        
+        // Check if slopes match (handling vertical/horizontal perfectly)
+        const isHorizontal = Math.abs(dy1) < 1 && Math.abs(dy2) < 1;
+        const isVertical = Math.abs(dx1) < 1 && Math.abs(dx2) < 1;
+        
+        if (isHorizontal || isVertical) {
+          simplified[simplified.length - 1] = curr; // Extend segment
+          continue;
+        }
+      }
+      
+      simplified.push(curr);
     }
 
-    // Pass 3: Create 90-degree turns between segments
-    const finalPath = this.createOrthogonalTurns(processedSegments);
+    // 4. Ensure orthogonal connections (turns) - inline logic for points
+    const finalPath = [];
+    if (simplified.length === 0) return [];
+    if (simplified.length === 1) return simplified;
+
+    finalPath.push(simplified[0]);
+    
+    for (let i = 1; i < simplified.length; i++) {
+      const prev = finalPath[finalPath.length - 1];
+      const curr = simplified[i];
+      
+      const dx = curr.x - prev.x;
+      const dy = curr.y - prev.y;
+      
+      // If both X and Y change significantly, we need a 90-degree turn
+      if (Math.abs(dx) > 1 && Math.abs(dy) > 1) {
+        // Determine turn direction based on which change is larger
+        if (Math.abs(dx) > Math.abs(dy)) {
+          // Horizontal move is larger - go horizontal first, then vertical
+          const turnPoint = {
+            ...prev,
+            x: curr.x,
+            y: prev.y,
+            locationName: prev.locationName || 'Turn',
+            floor: prev.floor ?? curr.floor ?? 1
+          };
+          if (Math.abs(turnPoint.x - prev.x) > 1 || Math.abs(turnPoint.y - prev.y) > 1) {
+            finalPath.push(turnPoint);
+          }
+        } else {
+          // Vertical move is larger - go vertical first, then horizontal
+          const turnPoint = {
+            ...prev,
+            x: prev.x,
+            y: curr.y,
+            locationName: prev.locationName || 'Turn',
+            floor: prev.floor ?? curr.floor ?? 1
+          };
+          if (Math.abs(turnPoint.x - prev.x) > 1 || Math.abs(turnPoint.y - prev.y) > 1) {
+            finalPath.push(turnPoint);
+          }
+        }
+      }
+      
+      // Add current point (skip if duplicate of last point)
+      if (Math.abs(curr.x - finalPath[finalPath.length - 1].x) > 0.1 ||
+          Math.abs(curr.y - finalPath[finalPath.length - 1].y) > 0.1) {
+        finalPath.push(curr);
+      }
+    }
 
     return finalPath;
   }
@@ -911,7 +1390,7 @@ class SpaceNavigationEngine {
    */
   getCorridorForSegment(seg) {
     if (seg.length === 0) return null;
-    const floor = seg[0].floor || 1;
+    const floor = seg[0].floor ?? 1;
     const floorCorridors = this.getCorridors(floor);
     
     // Try location name matching first (case-insensitive, partial match)
@@ -987,18 +1466,27 @@ class SpaceNavigationEngine {
 
       const orientation = this.getCorridorOrientation(corridor);
       let centerValue;
+      
+      // Calculate bounds
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+      for (const [x, y] of corridor.polygon) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
 
       if (orientation === 'horizontal') {
-        // Compute optimal Y center for horizontal corridor
         centerValue = this.computeCorridorCenterY(corridor);
       } else {
-        // Compute optimal X center for vertical corridor
         centerValue = this.computeCorridorCenterX(corridor);
       }
 
       this.corridorCenters.set(corridor.id, {
         orientation,
         centerValue,
+        bounds: { minX, maxX, minY, maxY },
         computed: true
       });
 
@@ -1042,7 +1530,7 @@ class SpaceNavigationEngine {
     
     // Ensure we have a valid corridor - try Main Corridor fallback if corridor not found
     if (!corridor && seg.length > 0) {
-      const floor = seg[0].floor || 1;
+      const floor = seg[0].floor ?? 1;
       const mainCorridor = this.getCorridors(floor).find(c => 
         (c.name || '').toLowerCase().includes('main')
       );
@@ -1178,27 +1666,26 @@ class SpaceNavigationEngine {
       maxY = Math.max(maxY, y);
     }
     
-    const geometricCenterY = (minY + maxY) / 2;
-
-    // FOR MAIN CORRIDOR: Always use geometric center for perfect visual alignment
-    if (corridor.name && corridor.name.toLowerCase().includes('main corridor')) {
-      console.log(`📏 Forcing geometric center Y for ${corridor.name}: ${geometricCenterY}`);
-      return geometricCenterY;
-    }
-
-    // Check if essentially rectangular (axis-aligned bounding box match)
-    // If the polygon area is close to bbox area, it's rectangular -> use geometric center
+    const boundingBoxCenterY = (minY + maxY) / 2;
     const width = maxX - minX;
     const height = maxY - minY;
-    // Simple check: if mostly rectangular, use geometric center
-    // This avoids clearance map noise for simple shapes
+
+    // FOR HORIZONTAL CORRIDORS: Calculate center by sampling the corridor shape
+    // This handles L-shaped and irregular corridors better than bounding box center
+    if (width > height) {
+      // Sample the corridor at multiple X positions to find the actual center
+      const centerY = this.computeLocalCenterY(corridor.polygon, minX, maxX, minY, maxY);
+      console.log(`📏 Using sampled center Y for horizontal corridor "${corridor.name || corridor.id}": ${centerY.toFixed(0)} (bbox center would be ${boundingBoxCenterY.toFixed(0)})`);
+      return centerY;
+    }
+
+    // For non-horizontal or simple shapes, use bounding box center
     if (corridor.polygon.length <= 5) { // Rectangle (4 pts) or simple loop (5 pts)
-       return geometricCenterY;
+       return boundingBoxCenterY;
     }
     
     if (!this.agent || !this.agent.clearanceMap) {
-      // Fallback to geometric center
-      return geometricCenterY;
+      return boundingBoxCenterY;
     }
     
     // Sample along the entire corridor width to find optimal centerline
@@ -1257,6 +1744,130 @@ class SpaceNavigationEngine {
   }
 
   /**
+   * Compute the local center Y by sampling the polygon at multiple X positions
+   * This handles L-shaped and irregular corridors better than bounding box center
+   * Returns the median center Y across all samples (resistant to outliers from extensions)
+   */
+  computeLocalCenterY(polygon, minX, maxX, minY, maxY) {
+    const numSamples = 20;
+    const sampleStep = (maxX - minX) / numSamples;
+    const centerYSamples = [];
+    
+    for (let sampleX = minX + sampleStep; sampleX < maxX - sampleStep; sampleX += sampleStep) {
+      // Find the Y range at this X position by ray casting
+      const intersections = [];
+      
+      for (let i = 0; i < polygon.length; i++) {
+        const [x1, y1] = polygon[i];
+        const [x2, y2] = polygon[(i + 1) % polygon.length];
+        
+        // Check if this edge crosses our sample X
+        if ((x1 <= sampleX && x2 > sampleX) || (x2 <= sampleX && x1 > sampleX)) {
+          // Calculate Y at this X using linear interpolation
+          const t = (sampleX - x1) / (x2 - x1);
+          const y = y1 + t * (y2 - y1);
+          intersections.push(y);
+        }
+      }
+      
+      if (intersections.length >= 2) {
+        // Sort intersections to find min and max Y at this X
+        intersections.sort((a, b) => a - b);
+        const localMinY = intersections[0];
+        const localMaxY = intersections[intersections.length - 1];
+        const localCenterY = (localMinY + localMaxY) / 2;
+        const localHeight = localMaxY - localMinY;
+        
+        // Weight by height - narrower sections define the main corridor
+        // Give more weight to points with smaller height (the main corridor, not extensions)
+        centerYSamples.push({ centerY: localCenterY, height: localHeight });
+      }
+    }
+    
+    if (centerYSamples.length === 0) {
+      return (minY + maxY) / 2; // Fallback to bounding box center
+    }
+    
+    // Find the most common corridor height (the "main" corridor section)
+    // Sort by height and find the mode/most common height
+    centerYSamples.sort((a, b) => a.height - b.height);
+    
+    // Use the samples from the narrowest (main) section of the corridor
+    // Take samples within 20% of the minimum height
+    const minHeight = centerYSamples[0].height;
+    const heightThreshold = minHeight * 1.3; // Allow 30% variation
+    
+    const mainSectionSamples = centerYSamples.filter(s => s.height <= heightThreshold);
+    
+    if (mainSectionSamples.length > 0) {
+      // Return the median center Y from the main section
+      mainSectionSamples.sort((a, b) => a.centerY - b.centerY);
+      return mainSectionSamples[Math.floor(mainSectionSamples.length / 2)].centerY;
+    }
+    
+    // Fallback: use all samples median
+    const allCenters = centerYSamples.map(s => s.centerY).sort((a, b) => a - b);
+    return allCenters[Math.floor(allCenters.length / 2)];
+  }
+
+  /**
+   * Compute the local center X by sampling the polygon at multiple Y positions
+   * This handles L-shaped and irregular corridors better than bounding box center
+   */
+  computeLocalCenterX(polygon, minX, maxX, minY, maxY) {
+    const numSamples = 20;
+    const sampleStep = (maxY - minY) / numSamples;
+    const centerXSamples = [];
+    
+    for (let sampleY = minY + sampleStep; sampleY < maxY - sampleStep; sampleY += sampleStep) {
+      // Find the X range at this Y position by ray casting
+      const intersections = [];
+      
+      for (let i = 0; i < polygon.length; i++) {
+        const [x1, y1] = polygon[i];
+        const [x2, y2] = polygon[(i + 1) % polygon.length];
+        
+        // Check if this edge crosses our sample Y
+        if ((y1 <= sampleY && y2 > sampleY) || (y2 <= sampleY && y1 > sampleY)) {
+          // Calculate X at this Y using linear interpolation
+          const t = (sampleY - y1) / (y2 - y1);
+          const x = x1 + t * (x2 - x1);
+          intersections.push(x);
+        }
+      }
+      
+      if (intersections.length >= 2) {
+        intersections.sort((a, b) => a - b);
+        const localMinX = intersections[0];
+        const localMaxX = intersections[intersections.length - 1];
+        const localCenterX = (localMinX + localMaxX) / 2;
+        const localWidth = localMaxX - localMinX;
+        
+        centerXSamples.push({ centerX: localCenterX, width: localWidth });
+      }
+    }
+    
+    if (centerXSamples.length === 0) {
+      return (minX + maxX) / 2;
+    }
+    
+    // Find samples from the narrowest section (main corridor)
+    centerXSamples.sort((a, b) => a.width - b.width);
+    const minWidth = centerXSamples[0].width;
+    const widthThreshold = minWidth * 1.3;
+    
+    const mainSectionSamples = centerXSamples.filter(s => s.width <= widthThreshold);
+    
+    if (mainSectionSamples.length > 0) {
+      mainSectionSamples.sort((a, b) => a.centerX - b.centerX);
+      return mainSectionSamples[Math.floor(mainSectionSamples.length / 2)].centerX;
+    }
+    
+    const allCenters = centerXSamples.map(s => s.centerX).sort((a, b) => a - b);
+    return allCenters[Math.floor(allCenters.length / 2)];
+  }
+
+  /**
    * Get the cached center X coordinate for a vertical corridor
    * Returns pre-computed centerline or falls back to geometric center
    */
@@ -1300,22 +1911,25 @@ class SpaceNavigationEngine {
       maxY = Math.max(maxY, y);
     }
     
-    const geometricCenterX = (minX + maxX) / 2;
+    const boundingBoxCenterX = (minX + maxX) / 2;
+    const width = maxX - minX;
+    const height = maxY - minY;
 
-    // FOR MAIN CORRIDOR: Always use geometric center for perfect visual alignment
-    if (corridor.name && corridor.name.toLowerCase().includes('main corridor')) {
-      console.log(`📏 Forcing geometric center X for ${corridor.name}: ${geometricCenterX}`);
-      return geometricCenterX;
+    // FOR VERTICAL CORRIDORS: Calculate center by sampling the corridor shape
+    // This handles L-shaped and irregular corridors better than bounding box center
+    if (height > width) {
+      const centerX = this.computeLocalCenterX(corridor.polygon, minX, maxX, minY, maxY);
+      console.log(`📏 Using sampled center X for vertical corridor "${corridor.name || corridor.id}": ${centerX.toFixed(0)} (bbox center would be ${boundingBoxCenterX.toFixed(0)})`);
+      return centerX;
     }
 
-    // Check if essentially rectangular (axis-aligned bounding box match)
+    // For non-vertical or simple shapes, use bounding box center
     if (corridor.polygon.length <= 5) {
-       return geometricCenterX;
+       return boundingBoxCenterX;
     }
     
     if (!this.agent || !this.agent.clearanceMap) {
-      // Fallback to geometric center
-      return geometricCenterX;
+      return boundingBoxCenterX;
     }
     
     // Sample along the entire corridor height to find optimal centerline
@@ -1548,7 +2162,7 @@ class SpaceNavigationEngine {
             x: currFirst.x, 
             y: prevLast.y,
             locationName: prevLast.locationName || currFirst.locationName,
-            floor: prevLast.floor || currFirst.floor || 1
+            floor: prevLast.floor ?? currFirst.floor ?? 1
           };
         } else {
           // Previous segment was mostly vertical, turn vertical first, then horizontal
@@ -1556,7 +2170,7 @@ class SpaceNavigationEngine {
             x: prevLast.x, 
             y: currFirst.y,
             locationName: prevLast.locationName || currFirst.locationName,
-            floor: prevLast.floor || currFirst.floor || 1
+            floor: prevLast.floor ?? currFirst.floor ?? 1
           };
         }
 

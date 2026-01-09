@@ -407,22 +407,65 @@ router.post('/message', async (req, res) => {
       });
     }
 
-    // Step 1: Intent Classification and Entity Extraction
-    const extractionPrompt = `Analyze the following user message and extract navigation intent.
+    // Step 1: Intent Classification and Entity Extraction with Floor Detection
+    const extractionPrompt = `You are a location parsing assistant for a building navigation system.
+
 User Message: "${message}"
 Current Location: "${context?.currentLocation || 'Main Entrance'}"
 
-Return ONLY a JSON object in this format:
+Available Locations (with floors):
+${(() => {
+      if (!spaceNavEngine) return 'No locations available';
+      const allDests = spaceNavEngine.destinations || [];
+      const uniqueLocations = new Map();
+      allDests.forEach(d => {
+        const key = (d.name || '').toLowerCase();
+        if (!uniqueLocations.has(key)) {
+          uniqueLocations.set(key, []);
+        }
+        uniqueLocations.get(key).push({ name: d.name, floor: d.floor, zone: d.zone });
+      });
+      let result = '';
+      uniqueLocations.forEach((floors, name) => {
+        const floorList = floors.map(f => `F${f.floor || '?'}`).join(', ');
+        result += `- ${floors[0].name} (${floorList})${floors[0].zone ? ` [Zone: ${floors[0].zone}]` : ''}\n`;
+      });
+      return result || 'No locations available';
+    })()}
+
+Task: Extract navigation intent and normalize location names with floor information.
+
+Return ONLY a JSON object:
 {
   "intent": "navigation" | "chat",
-  "from": "origin location name" (or null if not specified/implied),
-  "to": "destination location name" (or null)
+  "from": {
+    "name": "normalized location name",
+    "floor": 0 or 1 or null (0=Ground/G/F, 1=First/1/F, null=unspecified)
+  } or null,
+  "to": {
+    "name": "normalized location name", 
+    "floor": 0 or 1 or null
+  } or null
 }
 
-Rules:
-- If the user asks "where is X", "how to get to X", "directions to X", intent is "navigation".
-- If "from" is not specified, infer it from context or use "current location".
-- Keep the original location names as the user wrote them.`;
+IMPORTANT RULES:
+1. Floor Detection:
+   - "ground floor", "G/F", "ground", "G" → floor: 0
+   - "first floor", "1/F", "1st floor", "first" → floor: 1
+   - If floor not mentioned, set to null (system will search all floors)
+
+2. Location Name Normalization:
+   - "AHU Room" = "AHU Room" or "AHU" or "Air Handling Unit"
+   - "Zone 1" = "Zone 1" or "Zone 01" or "zone_01"
+   - "Lift Lobby" = "Lift Lobby" or "Elevator" or "Lift"
+   - Match to available locations above
+
+3. Examples:
+   - "go to ahu room ground floor" → {"to": {"name": "AHU Room", "floor": 0}}
+   - "from zone 1 first floor to lift lobby" → {"from": {"name": "Zone 1", "floor": 1}, "to": {"name": "Lift Lobby", "floor": null}}
+   - "directions to zone 5" → {"to": {"name": "Zone 5", "floor": null}}
+
+4. If intent is not navigation, set intent to "chat" and from/to to null.`;
 
     const extractionRaw = await runOpenAI(extractionPrompt, { temperature: 0.1 });
     const extractionText = extractionRaw.replace(/```json|```/g, '').trim();
@@ -432,6 +475,15 @@ Rules:
       intentData = JSON.parse(extractionText);
     } catch (e) {
       console.warn('Failed to parse intent JSON:', extractionText);
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = extractionText.match(/```json\s*([\s\S]*?)\s*```/) || extractionText.match(/```\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        try {
+          intentData = JSON.parse(jsonMatch[1]);
+        } catch (e2) {
+          console.warn('Failed to parse extracted JSON:', jsonMatch[1]);
+        }
+      }
     }
 
     let pathResult = null;
@@ -442,8 +494,28 @@ Rules:
     if (intentData.intent === 'navigation' && intentData.to) {
       console.log('🧭 Navigation intent detected:', intentData);
 
-      const fromInput = intentData.from || context?.currentLocation || 'Main Entrance';
-      const toInput = intentData.to;
+      // Handle new structured format with floor info
+      let fromInput, fromFloor;
+      if (intentData.from && typeof intentData.from === 'object') {
+        fromInput = intentData.from.name;
+        fromFloor = intentData.from.floor;
+      } else {
+        fromInput = intentData.from || context?.currentLocation || 'Main Entrance';
+        fromFloor = null;
+      }
+
+      let toInput, toFloor;
+      if (intentData.to && typeof intentData.to === 'object') {
+        toInput = intentData.to.name;
+        toFloor = intentData.to.floor;
+      } else {
+        toInput = intentData.to;
+        toFloor = null;
+      }
+
+      console.log('🔍 Parsed locations:');
+      console.log('  From:', fromInput, fromFloor !== null ? `[Floor ${fromFloor}]` : '[Any Floor]');
+      console.log('  To:', toInput, toFloor !== null ? `[Floor ${toFloor}]` : '[Any Floor]');
 
       console.log('🔍 Looking up locations:');
       console.log('  From:', fromInput);
@@ -454,7 +526,13 @@ Rules:
         console.log('🚀 Using Space Navigation Engine (Continuous RL)');
 
         try {
-          const spaceNavResult = await spaceNavEngine.navigate(fromInput, toInput, { floor: 1 });
+          // Let the engine determine the best floor(s) based on locations
+          // Pass floor hints if available from AI extraction
+          const navOptions = {};
+          if (fromFloor !== null) navOptions.startFloor = fromFloor;
+          if (toFloor !== null) navOptions.destFloor = toFloor;
+          
+          const spaceNavResult = await spaceNavEngine.navigate(fromInput, toInput, navOptions);
 
           if (spaceNavResult.success) {
             const totalDistanceMeters = spaceNavResult.stats.totalDistance / 12; // Convert pixels to meters (12 pixels/meter)
@@ -474,7 +552,7 @@ Rules:
             pathData = {
               from: {
                 name: fromInput,
-                floor: 1,
+                floor: spaceNavResult.start.floor !== undefined ? spaceNavResult.start.floor : 1,
                 x: spaceNavResult.start.x,
                 y: spaceNavResult.start.y,
                 pixelX: spaceNavResult.start.x,
@@ -482,7 +560,7 @@ Rules:
               },
               to: {
                 name: spaceNavResult.destination.name,
-                floor: spaceNavResult.destination.floor,
+                floor: spaceNavResult.destination.floor !== undefined ? spaceNavResult.destination.floor : 1,
                 x: spaceNavResult.destination.x,
                 y: spaceNavResult.destination.y,
                 pixelX: spaceNavResult.destination.x,
@@ -492,24 +570,28 @@ Rules:
                 id: `step_${i}`,
                 name: i === 0 ? fromInput : i === spaceNavResult.path.length - 1 ? spaceNavResult.destination.name : `Step ${i}`,
                 locationName: p.locationName,
-                floor: 1,
+                floor: p.floor !== undefined ? p.floor : 1,
                 x: p.x,
                 y: p.y,
                 pixelX: p.x,
                 pixelY: p.y,
+                isFloorChange: p.isFloorChange, // Propagate floor change flag
                 type: i === spaceNavResult.path.length - 1 ? 'destination' : 'waypoint'
               })),
               visualization: {
                 svgPath: spaceNavResult.svgPath,
                 smoothPath: spaceNavResult.path,
-                arrows: spaceNavResult.arrows || [], // Include arrows for visualization
+                arrows: spaceNavResult.arrows || spaceNavResult.floorArrows?.[spaceNavResult.start.floor ?? 1] || [], // Default arrows
+                floorPaths: spaceNavResult.floorPaths, // Pass multi-floor SVG paths
+                floorArrows: spaceNavResult.floorArrows, // Pass multi-floor arrows
                 animation: {
                   totalLength: spaceNavResult.stats.totalDistance
                 }
               },
               destination: spaceNavResult.destination,
               totalDistance: totalDistanceMeters,
-              estimatedTime: estimatedTimeMinutes
+              estimatedTime: estimatedTimeMinutes,
+              isMultiFloor: spaceNavResult.isMultiFloor
             };
 
             console.log(`✅ Space Navigation found path:`);

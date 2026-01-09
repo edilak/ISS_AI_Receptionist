@@ -80,7 +80,7 @@ const SpaceEditor = ({ onClose, onSave }) => {
 
   // Grid settings
   const [snapToGrid, setSnapToGrid] = useState(true);
-  const [gridSize, setGridSize] = useState(10); // pixels
+  const [gridSize, setGridSize] = useState(5); // pixels - smaller default for better precision
   const [autoGridSize, setAutoGridSize] = useState(true); // Auto-calculate based on image
   const [showGrid, setShowGrid] = useState(true);
 
@@ -168,8 +168,9 @@ const SpaceEditor = ({ onClose, onSave }) => {
 
       // Auto-calculate grid size based on image dimensions
       if (autoGridSize) {
-        // Use approximately 1/100th of image width, rounded to nearest 5
-        const calculatedSize = Math.max(5, Math.round((width / 100) / 5) * 5);
+        // Use approximately 1/200th of image width for finer grid, rounded to nearest 5
+        // This gives smaller grid cells for better precision
+        const calculatedSize = Math.max(1, Math.round((width / 200) / 5) * 5);
         setGridSize(calculatedSize);
       }
     }
@@ -251,6 +252,16 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // **OPTIMIZATION: Memoize connectivity check to prevent re-calculation on every render**
   const connectivityStatus = React.useMemo(() => checkCorridorsConnected(), [checkCorridorsConnected]);
 
+
+  const handleMouseUp = (e) => {
+    // Handle dragging
+    if (isDragging) {
+      setIsDragging(false);
+      setDragType(null);
+      setDragIndex(null);
+      setDragCorridorId(null);
+    }
+  };
 
   // Helper: Get consistent SVG coordinates with snap-to-grid
   const getSVGCoordinates = (event) => {
@@ -565,15 +576,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
     setSelectedDestinationId(destId);
   };
 
-  // Handle mouse up
-  const handleMouseUp = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      setDragType(null);
-      setDragIndex(null);
-      setDragCorridorId(null);
-    }
-  };
 
   // Update selected corridor name
   const updateCorridorName = (name) => {
@@ -1072,10 +1074,10 @@ const SpaceEditor = ({ onClose, onSave }) => {
                 type="number"
                 value={gridSize}
                 onChange={(e) => {
-                  setGridSize(parseInt(e.target.value) || 10);
+                  setGridSize(parseInt(e.target.value) || 5);
                   setAutoGridSize(false);
                 }}
-                min="3"
+                min="1"
                 max="50"
                 disabled={autoGridSize}
               />
@@ -1271,6 +1273,8 @@ const SpaceEditor = ({ onClose, onSave }) => {
                 className="canvas-overlay"
                 viewBox={`0 0 ${imageDimensions.width} ${imageDimensions.height}`}
                 preserveAspectRatio="xMidYMid meet"
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -1278,12 +1282,13 @@ const SpaceEditor = ({ onClose, onSave }) => {
                   width: '100%',
                   height: '100%',
                   pointerEvents: 'all',
-                  cursor: (editorMode === 'polygon' || editorMode === 'destination') ? 'none' : 'default',
+                  cursor: (editorMode === 'polygon' || editorMode === 'destination') ? 'crosshair' : 'default',
                   overflow: 'visible'
                 }}
                 onClick={handleImageClick}
                 onDoubleClick={handleDoubleClick}
                 onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
               >
                 {renderGridDefs()}
                 {renderGrid()}
