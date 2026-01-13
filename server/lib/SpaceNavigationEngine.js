@@ -962,11 +962,12 @@ class SpaceNavigationEngine {
 
     console.log(`🚀 Finding path: (${start.x.toFixed(0)}, ${start.y.toFixed(0)}) → ${destName} (${destX.toFixed(0)}, ${destY.toFixed(0)}) [Floor ${destFloor}]`);
 
-    // Use RL agent to find path
+    // Use RL agent to find path with floor-specific grid
     const result = this.agent.findPath(
       start.x, start.y,
       destX, destY,
-      destId
+      destId,
+      destFloor
     );
 
     if (result.success) {
@@ -1019,8 +1020,14 @@ class SpaceNavigationEngine {
       // This treats corridors as magnetic axes and snaps points to them globally
       let enrichedPath = this.snapPathToCorridorAxes(simplifiedPath, actualFloor);
 
+      // Validate all path points are within corridors (filter out invalid points)
+      enrichedPath = this.validatePathPoints(enrichedPath, actualFloor);
+
       // Ensure path turns to and connects with destination point
       enrichedPath = this.ensurePathReachesDestination(enrichedPath, destX, destY, floor);
+      
+      // Final validation after destination connection
+      enrichedPath = this.validatePathPoints(enrichedPath, actualFloor);
 
       // Generate SVG path string
       const svgPath = this.generateSVGPath(enrichedPath);
@@ -1258,7 +1265,8 @@ class SpaceNavigationEngine {
           id: corridor.id,
           orientation: centerData.orientation,
           value: centerData.centerValue,
-          bounds: centerData.bounds
+          bounds: centerData.bounds,
+          polygon: corridor.polygon // Include polygon for accurate containment check
         });
         console.log(`  ✓ ${corridor.name}: ${centerData.orientation}, center=${centerData.centerValue.toFixed(0)}, bounds=[${centerData.bounds.minX.toFixed(0)},${centerData.bounds.maxX.toFixed(0)}]x[${centerData.bounds.minY.toFixed(0)},${centerData.bounds.maxY.toFixed(0)}]`);
       } else {
@@ -1267,37 +1275,66 @@ class SpaceNavigationEngine {
     }
 
     // 2. Snap each point to the best axis
+    // First check polygon containment, then fall back to bounding box with validation
     const snappedPoints = path.map(p => {
-      // Find all axes that contain this point (with tolerance)
-      const containingAxes = axes.filter(axis => {
-        const padding = 25; // Generous padding to catch points near boundary
-        return p.x >= axis.bounds.minX - padding && 
-               p.x <= axis.bounds.maxX + padding &&
-               p.y >= axis.bounds.minY - padding && 
-               p.y <= axis.bounds.maxY + padding;
+      // First try: find corridors that ACTUALLY contain this point (polygon check)
+      let containingAxes = axes.filter(axis => {
+        return this.agent.isPointInPolygon(p.x, p.y, axis.polygon);
       });
 
-      if (containingAxes.length === 0) return { ...p }; // No snap
+      // If no polygon match, try bounding box check (for points near corridor edges)
+      if (containingAxes.length === 0) {
+        containingAxes = axes.filter(axis => {
+          const padding = 15; // Smaller padding for edge cases
+          return p.x >= axis.bounds.minX - padding && 
+                 p.x <= axis.bounds.maxX + padding &&
+                 p.y >= axis.bounds.minY - padding && 
+                 p.y <= axis.bounds.maxY + padding;
+        });
+      }
 
-      // If multiple axes (intersection), find best fit
-      // If we have H and V axes, snap to intersection
+      if (containingAxes.length === 0) {
+        // Point not near any corridor - keep original
+        return { ...p };
+      }
+
+      // If multiple axes (intersection of corridors), find best fit
       const hAxis = containingAxes.find(a => a.orientation === 'horizontal');
       const vAxis = containingAxes.find(a => a.orientation === 'vertical');
 
+      let snappedPoint = { ...p };
+
       if (hAxis && vAxis) {
-        // Intersection: perfect snap
-        return { ...p, x: vAxis.value, y: hAxis.value, locationName: 'Intersection' };
+        // Intersection: snap to both axes
+        snappedPoint = { ...p, x: vAxis.value, y: hAxis.value, locationName: 'Intersection' };
+      } else if (hAxis) {
+        snappedPoint = { ...p, y: hAxis.value };
+      } else if (vAxis) {
+        snappedPoint = { ...p, x: vAxis.value };
       }
 
-      if (hAxis) {
-        return { ...p, y: hAxis.value };
-      }
+      // Validate that snapped point is still inside a corridor polygon (with tolerance)
+      const snappedCorridor = this.getCorridorForPoint(snappedPoint.x, snappedPoint.y, pathFloor, 15);
       
-      if (vAxis) {
-        return { ...p, x: vAxis.value };
+      if (!snappedCorridor) {
+        // Snapped point moved outside corridors - try partial snaps
+        if (hAxis) {
+          const testPoint = { ...p, y: hAxis.value };
+          if (this.getCorridorForPoint(testPoint.x, testPoint.y, pathFloor, 15)) {
+            return testPoint;
+          }
+        }
+        if (vAxis) {
+          const testPoint = { ...p, x: vAxis.value };
+          if (this.getCorridorForPoint(testPoint.x, testPoint.y, pathFloor, 15)) {
+            return testPoint;
+          }
+        }
+        // All snaps failed - keep original point
+        return { ...p };
       }
 
-      return { ...p };
+      return snappedPoint;
     });
 
     // 3. Simplify collinear points
@@ -1347,29 +1384,49 @@ class SpaceNavigationEngine {
       // If both X and Y change significantly, we need a 90-degree turn
       if (Math.abs(dx) > 1 && Math.abs(dy) > 1) {
         // Determine turn direction based on which change is larger
+        let turnPoint = null;
+        
         if (Math.abs(dx) > Math.abs(dy)) {
           // Horizontal move is larger - go horizontal first, then vertical
-          const turnPoint = {
+          turnPoint = {
             ...prev,
             x: curr.x,
             y: prev.y,
             locationName: prev.locationName || 'Turn',
             floor: prev.floor ?? curr.floor ?? 1
           };
-          if (Math.abs(turnPoint.x - prev.x) > 1 || Math.abs(turnPoint.y - prev.y) > 1) {
-            finalPath.push(turnPoint);
-          }
         } else {
           // Vertical move is larger - go vertical first, then horizontal
-          const turnPoint = {
+          turnPoint = {
             ...prev,
             x: prev.x,
             y: curr.y,
             locationName: prev.locationName || 'Turn',
             floor: prev.floor ?? curr.floor ?? 1
           };
-          if (Math.abs(turnPoint.x - prev.x) > 1 || Math.abs(turnPoint.y - prev.y) > 1) {
+        }
+        
+        // CRITICAL: Validate turn point is inside a corridor
+        if (turnPoint && (Math.abs(turnPoint.x - prev.x) > 1 || Math.abs(turnPoint.y - prev.y) > 1)) {
+          const turnFloor = turnPoint.floor ?? pathFloor;
+          const turnCorridor = this.getCorridorForPoint(turnPoint.x, turnPoint.y, turnFloor, 5);
+          
+          if (turnCorridor) {
+            // Turn point is valid - add it
             finalPath.push(turnPoint);
+          } else {
+            // Turn point is outside corridors - try alternative turn
+            // Try the other direction
+            const altTurnPoint = Math.abs(dx) > Math.abs(dy) 
+              ? { ...prev, x: prev.x, y: curr.y, locationName: prev.locationName || 'Turn', floor: turnFloor }
+              : { ...prev, x: curr.x, y: prev.y, locationName: prev.locationName || 'Turn', floor: turnFloor };
+            
+            const altCorridor = this.getCorridorForPoint(altTurnPoint.x, altTurnPoint.y, turnFloor, 5);
+            if (altCorridor) {
+              finalPath.push(altTurnPoint);
+            }
+            // If both turn options fail, skip the turn point and let the path go directly
+            // (This might create a diagonal, but it's better than going through walls)
           }
         }
       }
@@ -1746,10 +1803,10 @@ class SpaceNavigationEngine {
   /**
    * Compute the local center Y by sampling the polygon at multiple X positions
    * This handles L-shaped and irregular corridors better than bounding box center
-   * Returns the median center Y across all samples (resistant to outliers from extensions)
+   * Returns the center Y of the "dominant" (longest) section of the corridor
    */
   computeLocalCenterY(polygon, minX, maxX, minY, maxY) {
-    const numSamples = 20;
+    const numSamples = 40; // Increased samples for better accuracy
     const sampleStep = (maxX - minX) / numSamples;
     const centerYSamples = [];
     
@@ -1778,8 +1835,6 @@ class SpaceNavigationEngine {
         const localCenterY = (localMinY + localMaxY) / 2;
         const localHeight = localMaxY - localMinY;
         
-        // Weight by height - narrower sections define the main corridor
-        // Give more weight to points with smaller height (the main corridor, not extensions)
         centerYSamples.push({ centerY: localCenterY, height: localHeight });
       }
     }
@@ -1788,21 +1843,41 @@ class SpaceNavigationEngine {
       return (minY + maxY) / 2; // Fallback to bounding box center
     }
     
-    // Find the most common corridor height (the "main" corridor section)
-    // Sort by height and find the mode/most common height
-    centerYSamples.sort((a, b) => a.height - b.height);
-    
-    // Use the samples from the narrowest (main) section of the corridor
-    // Take samples within 20% of the minimum height
-    const minHeight = centerYSamples[0].height;
-    const heightThreshold = minHeight * 1.3; // Allow 30% variation
-    
-    const mainSectionSamples = centerYSamples.filter(s => s.height <= heightThreshold);
-    
-    if (mainSectionSamples.length > 0) {
-      // Return the median center Y from the main section
-      mainSectionSamples.sort((a, b) => a.centerY - b.centerY);
-      return mainSectionSamples[Math.floor(mainSectionSamples.length / 2)].centerY;
+    // Cluster samples by centerY similarity to find the "dominant" centerline
+    // This allows us to pick the center of the longest corridor section, 
+    // ignoring shorter extensions or alcoves.
+    const clusters = [];
+    const threshold = 40; // Pixel threshold for clustering (vertical deviation)
+
+    for (const sample of centerYSamples) {
+      let added = false;
+      for (const cluster of clusters) {
+        // Check distance to cluster mean
+        const clusterMean = cluster.sum / cluster.count;
+        if (Math.abs(sample.centerY - clusterMean) < threshold) {
+          cluster.samples.push(sample);
+          cluster.sum += sample.centerY;
+          cluster.count++;
+          added = true;
+          break;
+        }
+      }
+      if (!added) {
+        clusters.push({
+          samples: [sample],
+          sum: sample.centerY,
+          count: 1
+        });
+      }
+    }
+
+    // Find largest cluster (representing the longest section of the corridor)
+    if (clusters.length > 0) {
+      clusters.sort((a, b) => b.count - a.count);
+      const bestCluster = clusters[0];
+      const weightedMean = bestCluster.sum / bestCluster.count;
+      // console.log(`📏 Computed local center Y: ${weightedMean.toFixed(0)} (from dominant cluster of ${bestCluster.count} samples)`);
+      return weightedMean;
     }
     
     // Fallback: use all samples median
@@ -1813,9 +1888,10 @@ class SpaceNavigationEngine {
   /**
    * Compute the local center X by sampling the polygon at multiple Y positions
    * This handles L-shaped and irregular corridors better than bounding box center
+   * Returns the center X of the "dominant" (longest) section of the corridor
    */
   computeLocalCenterX(polygon, minX, maxX, minY, maxY) {
-    const numSamples = 20;
+    const numSamples = 40; // Increased samples
     const sampleStep = (maxY - minY) / numSamples;
     const centerXSamples = [];
     
@@ -1851,18 +1927,41 @@ class SpaceNavigationEngine {
       return (minX + maxX) / 2;
     }
     
-    // Find samples from the narrowest section (main corridor)
-    centerXSamples.sort((a, b) => a.width - b.width);
-    const minWidth = centerXSamples[0].width;
-    const widthThreshold = minWidth * 1.3;
-    
-    const mainSectionSamples = centerXSamples.filter(s => s.width <= widthThreshold);
-    
-    if (mainSectionSamples.length > 0) {
-      mainSectionSamples.sort((a, b) => a.centerX - b.centerX);
-      return mainSectionSamples[Math.floor(mainSectionSamples.length / 2)].centerX;
+    // Cluster samples by centerX similarity to find the "dominant" centerline
+    const clusters = [];
+    const threshold = 40; // Pixel threshold for clustering
+
+    for (const sample of centerXSamples) {
+      let added = false;
+      for (const cluster of clusters) {
+        const clusterMean = cluster.sum / cluster.count;
+        if (Math.abs(sample.centerX - clusterMean) < threshold) {
+          cluster.samples.push(sample);
+          cluster.sum += sample.centerX;
+          cluster.count++;
+          added = true;
+          break;
+        }
+      }
+      if (!added) {
+        clusters.push({
+          samples: [sample],
+          sum: sample.centerX,
+          count: 1
+        });
+      }
+    }
+
+    // Find largest cluster
+    if (clusters.length > 0) {
+      clusters.sort((a, b) => b.count - a.count);
+      const bestCluster = clusters[0];
+      const weightedMean = bestCluster.sum / bestCluster.count;
+      // console.log(`📏 Computed local center X: ${weightedMean.toFixed(0)} (from dominant cluster of ${bestCluster.count} samples)`);
+      return weightedMean;
     }
     
+    // Fallback: use all samples median
     const allCenters = centerXSamples.map(s => s.centerX).sort((a, b) => a - b);
     return allCenters[Math.floor(allCenters.length / 2)];
   }
@@ -2275,6 +2374,65 @@ class SpaceNavigationEngine {
    */
   isPointInAnyCorridor(x, y, floor = 1) {
     return this.agent.isPointNavigable(x, y);
+  }
+
+  /**
+   * Validate that all path points are within defined corridors
+   * Removes or adjusts points that are outside corridors
+   */
+  validatePathPoints(path, floor) {
+    if (!path || path.length === 0) return path;
+
+    const validatedPath = [];
+    
+    for (let i = 0; i < path.length; i++) {
+      const point = path[i];
+      const pointFloor = point.floor ?? floor;
+      
+      // Check if point is in a corridor
+      const corridor = this.getCorridorForPoint(point.x, point.y, pointFloor, 10);
+      
+      if (corridor) {
+        // Point is valid - keep it
+        validatedPath.push(point);
+      } else {
+        // Point is outside corridors
+        // Try to find nearest valid point
+        const nearest = this.agent.findNearestNavigablePoint(point.x, point.y);
+        
+        if (nearest) {
+          // Check if nearest point is actually in a corridor (not just navigable grid)
+          const nearestCorridor = this.getCorridorForPoint(nearest.x, nearest.y, pointFloor, 10);
+          if (nearestCorridor) {
+            validatedPath.push({
+              ...point,
+              x: nearest.x,
+              y: nearest.y,
+              locationName: nearestCorridor.displayName || nearestCorridor.name
+            });
+          } else {
+            // Nearest point is also not in a corridor - skip this point
+            // But keep it if it's the start or end point (might be in a room)
+            if (i === 0 || i === path.length - 1) {
+              validatedPath.push(point);
+            }
+            // Otherwise skip it
+          }
+        } else {
+          // No navigable point found - keep original if start/end, otherwise skip
+          if (i === 0 || i === path.length - 1) {
+            validatedPath.push(point);
+          }
+        }
+      }
+    }
+
+    // Ensure we have at least start and end points
+    if (validatedPath.length === 0 && path.length > 0) {
+      return [path[0], path[path.length - 1]];
+    }
+
+    return validatedPath;
   }
 
   /**

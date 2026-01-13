@@ -119,11 +119,11 @@
         ],
         [
           1970,
-          580
+          560
         ],
         [
           2010,
-          580
+          560
         ],
         [
           2010,
@@ -170,7 +170,7 @@
           510
         ],
         [
-          370,
+          390,
           510
         ],
         [
@@ -186,16 +186,12 @@
           710
         ],
         [
-          1870,
+          1850,
           710
         ],
         [
-          1870,
-          580
-        ],
-        [
-          1970,
-          580
+          1850,
+          560
         ],
         [
           1970,
@@ -203,11 +199,103 @@
         ],
         [
           1970,
-          530
+          540
+        ],
+        [
+          1970,
+          510
         ],
         [
           1970,
           500
+        ]
+      ],
+      "type": "corridor"
+    },
+    {
+      "id": "corridor_1767947669783",
+      "name": "Left Corridor",
+      "floor": 0,
+      "polygon": [
+        [
+          390,
+          510
+        ],
+        [
+          400,
+          1020
+        ],
+        [
+          470,
+          1020
+        ],
+        [
+          470,
+          840
+        ],
+        [
+          470,
+          690
+        ],
+        [
+          470,
+          530
+        ],
+        [
+          390,
+          510
+        ]
+      ],
+      "type": "corridor"
+    },
+    {
+      "id": "corridor_1768239968622",
+      "name": "Corridor 4",
+      "floor": 0,
+      "polygon": [
+        [
+          470,
+          720
+        ],
+        [
+          2010,
+          710
+        ],
+        [
+          2010,
+          790
+        ],
+        [
+          470,
+          790
+        ]
+      ],
+      "type": "corridor"
+    },
+    {
+      "id": "corridor_1768272548088",
+      "name": "Corridor 4",
+      "floor": 1,
+      "polygon": [
+        [
+          1570,
+          310
+        ],
+        [
+          930,
+          310
+        ],
+        [
+          960,
+          1060
+        ],
+        [
+          1580,
+          430
+        ],
+        [
+          1570,
+          310
         ]
       ],
       "type": "corridor"
@@ -229,7 +317,7 @@
       "zone": "lift_lobby",
       "floor": 1,
       "x": 2150,
-      "y": 800,
+      "y": 810,
       "facing": "east"
     },
     {
@@ -364,7 +452,7 @@
       "zone": "lift_lobby",
       "floor": 0,
       "x": 2090,
-      "y": 760,
+      "y": 770,
       "facing": "east"
     },
     {
@@ -393,8 +481,125 @@
       "x": 910,
       "y": 460,
       "facing": "north"
+    },
+    {
+      "id": "dest_1767948097903",
+      "name": "Telephone Equipment Room",
+      "zone": "telephone_equipment_room",
+      "floor": 0,
+      "x": 700,
+      "y": 720,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767948136826",
+      "name": "Sky Garden",
+      "zone": "sky_garden",
+      "floor": 0,
+      "x": 1330,
+      "y": 720,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1767948203631",
+      "name": "Electric Room",
+      "zone": "electric_room",
+      "floor": 0,
+      "x": 910,
+      "y": 530,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767948224516",
+      "name": "Atrium",
+      "zone": "atrium",
+      "floor": 0,
+      "x": 1800,
+      "y": 790,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767948252726",
+      "name": "Unit 19",
+      "zone": "unit_19",
+      "floor": 0,
+      "x": 2050,
+      "y": 1070,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767949214205",
+      "name": "Unit 25",
+      "zone": "unit_25",
+      "floor": 0,
+      "x": 440,
+      "y": 1010,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1767950390729",
+      "name": "Laundry",
+      "zone": "laundry",
+      "floor": 0,
+      "x": 630,
+      "y": 720,
+      "facing": "north"
+    },
+    {
+      "id": "dest_1768272561225",
+      "name": "Exit 28",
+      "zone": "",
+      "floor": 1,
+      "x": 1020,
+      "y": 310,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1768272564470",
+      "name": "Exit 29",
+      "zone": "",
+      "floor": 1,
+      "x": 1520,
+      "y": 310,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1768272567500",
+      "name": "Exit 30",
+      "zone": "",
+      "floor": 1,
+      "x": 1050,
+      "y": 440,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1768272632173",
+      "name": "Exit 31",
+      "zone": "",
+      "floor": 1,
+      "x": 1470,
+      "y": 550,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1768272635985",
+      "name": "Exit 32",
+      "zone": "",
+      "floor": 1,
+      "x": 940,
+      "y": 580,
+      "facing": "south"
+    },
+    {
+      "id": "dest_1768274039948",
+      "name": "Exit 33",
+      "zone": "",
+      "floor": 0,
+      "x": 190,
+      "y": 460,
+      "facing": "south"
     }
   ],
   "gridSize": 10,
-  "savedAt": "2026-01-09T08:09:17.901Z"
+  "savedAt": "2026-01-13T03:14:42.421Z"
 }

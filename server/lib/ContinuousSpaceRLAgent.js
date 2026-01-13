@@ -31,6 +31,8 @@ class ContinuousSpaceRLAgent {
         this.gridWidth = 0;
         this.gridHeight = 0;
         this.navigableGrid = null; // Boolean[][]
+        this.floorGrids = new Map(); // Map<floor, Uint8Array> - Separate grids per floor
+        this.floorClearanceMaps = new Map(); // Map<floor, Float32Array> - Separate clearance maps per floor
 
         // Value Function: Map<GoalId, Float32Array(width * height)>
         // Stores the optimal value to reach a specific destination from any cell
@@ -48,12 +50,175 @@ class ContinuousSpaceRLAgent {
         // Reset models when environment changes
         this.valueMaps.clear();
 
-        // Build the grid
+        // Build the combined grid (for backward compatibility)
         this.buildGrid();
+        
+        // Build separate grids per floor for accurate floor-specific pathfinding
+        this.buildFloorGrids();
 
         console.log(`🗺️ RL Environment Initialized:`);
         console.log(`   Dimensions: ${this.imageDimensions.width}x${this.imageDimensions.height}`);
         console.log(`   Grid: ${this.gridWidth}x${this.gridHeight} (Resolution: ${this.options.gridResolution}px)`);
+        console.log(`   Corridors: ${this.corridors.length} (F0: ${this.corridors.filter(c => c.floor === 0).length}, F1: ${this.corridors.filter(c => c.floor === 1).length})`);
+    }
+    
+    /**
+     * Build separate navigable grids for each floor
+     */
+    buildFloorGrids() {
+        if (!this.imageDimensions) return;
+        
+        const { width, height } = this.imageDimensions;
+        const res = this.options.gridResolution;
+        const gridWidth = Math.ceil(width / res);
+        const gridHeight = Math.ceil(height / res);
+        
+        // Get unique floors from corridors
+        const floors = [...new Set(this.corridors.map(c => c.floor).filter(f => f !== undefined && f !== null))];
+        
+        for (const floor of floors) {
+            const floorGrid = new Uint8Array(gridWidth * gridHeight);
+            let navigableCount = 0;
+            
+            // Get corridors for this floor
+            const floorCorridors = this.corridors.filter(c => c.floor === floor);
+            
+            // Pre-compute which corridors overlap (for intersection detection)
+            const corridorOverlaps = new Map(); // corridorId -> Set of overlapping corridor IDs
+            for (const c1 of floorCorridors) {
+                corridorOverlaps.set(c1.id, new Set());
+                const bbox1 = this.getPolygonBoundingBox(c1.polygon);
+                for (const c2 of floorCorridors) {
+                    if (c1.id !== c2.id) {
+                        const bbox2 = this.getPolygonBoundingBox(c2.polygon);
+                        // Check if bounding boxes overlap
+                        if (bbox1.minX < bbox2.maxX && bbox1.maxX > bbox2.minX &&
+                            bbox1.minY < bbox2.maxY && bbox1.maxY > bbox2.minY) {
+                            corridorOverlaps.get(c1.id).add(c2.id);
+                        }
+                    }
+                }
+            }
+            
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    const cx = (x + 0.5) * res;
+                    const cy = (y + 0.5) * res;
+                    
+                    // Check if CENTER is inside a corridor (primary check)
+                    let isNavigable = this.isPointInAnyCorridorRaw(cx, cy, floor);
+                    
+                    // If center is not in corridor, check corners
+                    if (!isNavigable) {
+                        const corners = [
+                            [x * res, y * res],
+                            [(x + 1) * res, y * res],
+                            [x * res, (y + 1) * res],
+                            [(x + 1) * res, (y + 1) * res]
+                        ];
+                        
+                        // Find which corridor(s) the corners touch
+                        const touchedCorridorIds = new Set();
+                        for (const [px, py] of corners) {
+                            for (const corridor of floorCorridors) {
+                                if (this.isPointInPolygon(px, py, corridor.polygon)) {
+                                    touchedCorridorIds.add(corridor.id);
+                                }
+                            }
+                        }
+                        
+                        if (touchedCorridorIds.size === 1) {
+                            // Corners touch only ONE corridor - definitely navigable (not a bridge)
+                            isNavigable = true;
+                        } else if (touchedCorridorIds.size > 1) {
+                            // Corners touch MULTIPLE corridors
+                            // This is valid ONLY if those corridors actually overlap (intersection)
+                            // Check if ALL touched corridors are connected (form a valid intersection)
+                            const touchedArray = [...touchedCorridorIds];
+                            let allConnected = true;
+                            for (let i = 0; i < touchedArray.length && allConnected; i++) {
+                                for (let j = i + 1; j < touchedArray.length && allConnected; j++) {
+                                    const id1 = touchedArray[i];
+                                    const id2 = touchedArray[j];
+                                    // Check if these two corridors overlap
+                                    if (!corridorOverlaps.get(id1)?.has(id2)) {
+                                        allConnected = false;
+                                    }
+                                }
+                            }
+                            if (allConnected) {
+                                isNavigable = true;
+                            }
+                        }
+                    }
+                    
+                    if (isNavigable) {
+                        floorGrid[y * gridWidth + x] = 1;
+                        navigableCount++;
+                    } else {
+                        floorGrid[y * gridWidth + x] = 0;
+                    }
+                }
+            }
+            
+            this.floorGrids.set(floor, floorGrid);
+            console.log(`   Floor ${floor} grid: ${navigableCount} navigable cells`);
+            
+            // Compute clearance map for this floor
+            const floorClearanceMap = this.computeClearanceMapForGrid(floorGrid, gridWidth, gridHeight);
+            this.floorClearanceMaps.set(floor, floorClearanceMap);
+        }
+    }
+
+    /**
+     * Compute clearance map for a specific grid
+     * @param {Uint8Array} grid - The navigable grid (1 = navigable, 0 = blocked)
+     * @param {number} width - Grid width
+     * @param {number} height - Grid height
+     * @returns {Float32Array} Clearance map
+     */
+    computeClearanceMapForGrid(grid, width, height) {
+        const size = width * height;
+        const clearanceMap = new Float32Array(size).fill(0);
+
+        // Initialize with max distance
+        const maxDist = width + height;
+        for (let i = 0; i < size; i++) {
+            if (grid[i] === 0) {
+                clearanceMap[i] = 0; // Obstacles have 0 clearance
+            } else {
+                clearanceMap[i] = maxDist;
+            }
+        }
+
+        // Two-pass algorithm (Manhattan distance transform)
+        // Pass 1: Top-Left to Bottom-Right
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                if (grid[idx] === 0) continue;
+
+                let minVal = clearanceMap[idx];
+                if (x > 0) minVal = Math.min(minVal, clearanceMap[idx - 1] + 1);
+                if (y > 0) minVal = Math.min(minVal, clearanceMap[idx - width] + 1);
+                clearanceMap[idx] = minVal;
+            }
+        }
+
+        // Pass 2: Bottom-Right to Top-Left
+        for (let y = height - 1; y >= 0; y--) {
+            for (let x = width - 1; x >= 0; x--) {
+                const idx = y * width + x;
+                if (grid[idx] === 0) continue;
+
+                let minVal = clearanceMap[idx];
+                if (x < width - 1) minVal = Math.min(minVal, clearanceMap[idx + 1] + 1);
+                if (y < height - 1) minVal = Math.min(minVal, clearanceMap[idx + width] + 1);
+                clearanceMap[idx] = minVal;
+            }
+        }
+
+        return clearanceMap;
     }
 
     /**
@@ -164,9 +329,16 @@ class ContinuousSpaceRLAgent {
 
     /**
      * Check if point is inside any corridor polygon
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {number|null} floor - Optional floor filter (0, 1, or null for all floors)
      */
-    isPointInAnyCorridorRaw(x, y) {
-        for (const corridor of this.corridors) {
+    isPointInAnyCorridorRaw(x, y, floor = null) {
+        const corridorsToCheck = floor !== null 
+            ? this.corridors.filter(c => c.floor === floor)
+            : this.corridors;
+            
+        for (const corridor of corridorsToCheck) {
             if (this.isPointInPolygon(x, y, corridor.polygon)) {
                 return true;
             }
@@ -187,6 +359,23 @@ class ContinuousSpaceRLAgent {
     }
 
     /**
+     * Get bounding box of a polygon
+     */
+    getPolygonBoundingBox(polygon) {
+        if (!polygon || polygon.length === 0) {
+            return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+        }
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const [x, y] of polygon) {
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+        return { minX, maxX, minY, maxY };
+    }
+
+    /**
      * TRAIN: Perform Value Iteration for all destinations
      * This computes the optimal policy for the entire floor.
      */
@@ -204,7 +393,8 @@ class ContinuousSpaceRLAgent {
         const total = this.destinations.length;
 
         for (const dest of this.destinations) {
-            this.performValueIteration(dest);
+            // Pass the destination's floor to use the correct grid
+            this.performValueIteration(dest, dest.floor);
             completed++;
             if (progressCallback) progressCallback((completed / total) * 100);
 
@@ -225,10 +415,26 @@ class ContinuousSpaceRLAgent {
      * We initialize Goal = 0, others = -Infinity
      * And propagate values.
      */
-    performValueIteration(destination) {
+    performValueIteration(destination, floor = null, grid = null, clearanceMap = null) {
         const width = this.gridWidth;
         const height = this.gridHeight;
         const size = width * height;
+        
+        // Determine floor to use:
+        // 1. Explicit 'floor' argument
+        // 2. 'destination.floor' property
+        // 3. Fallback to null (combined grid)
+        const targetFloor = floor !== null ? floor : (destination.floor !== undefined ? destination.floor : null);
+
+        // Use floor-specific grid if available
+        const useGrid = grid || ((targetFloor !== null && this.floorGrids.has(targetFloor)) 
+            ? this.floorGrids.get(targetFloor)
+            : this.navigableGrid);
+
+        // Use floor-specific clearance map if available
+        const useClearanceMap = clearanceMap || ((targetFloor !== null && this.floorClearanceMaps.has(targetFloor))
+            ? this.floorClearanceMaps.get(targetFloor)
+            : this.clearanceMap);
 
         // Value array: Float32 for memory efficiency
         // Initialize with a very low value (representing high cost/unreachable)
@@ -240,7 +446,7 @@ class ContinuousSpaceRLAgent {
 
         if (gx >= 0 && gx < width && gy >= 0 && gy < height) {
             // Check if exact destination is navigable
-            if (this.navigableGrid[gy * width + gx] === 1) {
+            if (useGrid[gy * width + gx] === 1) {
                 values[gy * width + gx] = 0;
                 console.log(`   📍 Destination ${destination.name} at grid (${gx},${gy}) is navigable`);
             } else {
@@ -248,7 +454,7 @@ class ContinuousSpaceRLAgent {
                 // This fixes the issue where path cannot be found TO a point, but can be found FROM it.
                 // (Start points are auto-snapped by findPath, but Destinations used as VI seeds were not)
                 console.log(`   ⚠️ Destination ${destination.name} at grid (${gx},${gy}) is NOT navigable, searching nearby...`);
-                const snapped = this.findNearestNavigableGrid(gx, gy);
+                const snapped = this.findNearestNavigableGrid(gx, gy, useGrid);
                 if (snapped) {
                     values[snapped.y * width + snapped.x] = 0;
                     console.log(`   📍 Snapped destination ${destination.name} from (${gx},${gy}) to (${snapped.x},${snapped.y})`);
@@ -287,7 +493,7 @@ class ContinuousSpaceRLAgent {
                     const idx = y * width + x;
 
                     // Skip if blocked
-                    if (this.navigableGrid[idx] === 0) continue;
+                    if (useGrid[idx] === 0) continue;
                     // Skip if goal (value fixed at 0)
                     if (x === gx && y === gy) continue;
 
@@ -297,7 +503,7 @@ class ContinuousSpaceRLAgent {
                     // If we are "safe" (clearance > threshold), no penalty -> standard Shortest Path
                     // If we are close to wall, small penalty.
                     // REDUCED for narrow corridors - original values caused oscillation
-                    const clearance = this.clearanceMap[idx];
+                    const clearance = useClearanceMap[idx];
                     const SAFE_DISTANCE = 1; // Reduced from 3 - only penalize cells DIRECTLY adjacent to walls
 
                     let wallPenalty = 0;
@@ -313,7 +519,7 @@ class ContinuousSpaceRLAgent {
 
                         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                             const nIdx = ny * width + nx;
-                            if (this.navigableGrid[nIdx] === 1) {
+                            if (useGrid[nIdx] === 1) {
                                 // Value calculation:
                                 // Reward = -StepCost * Distance * (1 + WallPenalty)
                                 // V(s) = R + gamma * V(s')
@@ -340,7 +546,7 @@ class ContinuousSpaceRLAgent {
      * Find path using the computed Value Map
      * This effectively performs Gradient Ascent on the value function.
      */
-    findPath(startX, startY, destX, destY, destId) {
+    findPath(startX, startY, destX, destY, destId, floor = null) {
         // 1. Check if we have a value map for this destination
         // If exact ID match fails (dynamic dest?), we might need to find closest trained dest
         // For now, assume destId is valid.
@@ -353,9 +559,19 @@ class ContinuousSpaceRLAgent {
         const targetX = Math.floor(destX / res);
         const targetY = Math.floor(destY / res);
 
+        // Use floor-specific grid if available
+        const navigableGrid = (floor !== null && this.floorGrids.has(floor)) 
+            ? this.floorGrids.get(floor)
+            : this.navigableGrid;
+
+        // Use floor-specific clearance map if available
+        const clearanceMap = (floor !== null && this.floorClearanceMaps.has(floor))
+            ? this.floorClearanceMaps.get(floor)
+            : this.clearanceMap;
+
         // If start is blocked, find nearest navigable
-        if (!this.isGridNavigable(cx, cy)) {
-            const nearest = this.findNearestNavigableGrid(cx, cy);
+        if (!this.isGridNavigable(cx, cy, navigableGrid)) {
+            const nearest = this.findNearestNavigableGrid(cx, cy, navigableGrid);
             if (nearest) {
                 cx = nearest.x;
                 cy = nearest.y;
@@ -371,9 +587,10 @@ class ContinuousSpaceRLAgent {
         // If no pre-computed map for this specific ID (maybe generic coordinate?), 
         // we should really compute it on demand or fail. 
         // Fallback: If map missing, Run VI for this destination immediately (it's fast)
+        // Use floor-specific grid if available
         if (!valueMap) {
             console.log(`⚠️ No pre-computed value map for ${destId}, computing now...`);
-            this.performValueIteration({ x: destX, y: destY, id: destId });
+            this.performValueIteration({ x: destX, y: destY, id: destId }, floor, navigableGrid, clearanceMap);
             valueMap = this.valueMaps.get(destId);
         }
 
@@ -407,7 +624,7 @@ class ContinuousSpaceRLAgent {
                     const ny = cy + dy;
 
                     if (nx >= 0 && nx < this.gridWidth && ny >= 0 && ny < this.gridHeight) {
-                        if (this.navigableGrid[ny * this.gridWidth + nx] === 1) {
+                        if (navigableGrid[ny * this.gridWidth + nx] === 1) {
                             const val = valueMap[ny * this.gridWidth + nx];
                             if (val > bestVal) {
                                 bestVal = val;
@@ -449,19 +666,21 @@ class ContinuousSpaceRLAgent {
         };
     }
 
-    isGridNavigable(x, y) {
+    isGridNavigable(x, y, grid = null) {
         if (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) return false;
-        return this.navigableGrid[y * this.gridWidth + x] === 1;
+        const useGrid = grid || this.navigableGrid;
+        return useGrid[y * this.gridWidth + x] === 1;
     }
 
-    findNearestNavigableGrid(x, y) {
+    findNearestNavigableGrid(x, y, grid = null) {
+        const useGrid = grid || this.navigableGrid;
         // Spiral search with larger radius for narrow corridors
         for (let r = 1; r < 25; r++) {
             for (let dy = -r; dy <= r; dy++) {
                 for (let dx = -r; dx <= r; dx++) {
                     const nx = x + dx;
                     const ny = y + dy;
-                    if (this.isGridNavigable(nx, ny)) return { x: nx, y: ny };
+                    if (this.isGridNavigable(nx, ny, useGrid)) return { x: nx, y: ny };
                 }
             }
         }
