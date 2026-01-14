@@ -271,34 +271,6 @@
         ]
       ],
       "type": "corridor"
-    },
-    {
-      "id": "corridor_1768272548088",
-      "name": "Corridor 4",
-      "floor": 1,
-      "polygon": [
-        [
-          1570,
-          310
-        ],
-        [
-          930,
-          310
-        ],
-        [
-          960,
-          1060
-        ],
-        [
-          1580,
-          430
-        ],
-        [
-          1570,
-          310
-        ]
-      ],
-      "type": "corridor"
     }
   ],
   "destinations": [
@@ -546,51 +518,6 @@
       "facing": "north"
     },
     {
-      "id": "dest_1768272561225",
-      "name": "Exit 28",
-      "zone": "",
-      "floor": 1,
-      "x": 1020,
-      "y": 310,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1768272564470",
-      "name": "Exit 29",
-      "zone": "",
-      "floor": 1,
-      "x": 1520,
-      "y": 310,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1768272567500",
-      "name": "Exit 30",
-      "zone": "",
-      "floor": 1,
-      "x": 1050,
-      "y": 440,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1768272632173",
-      "name": "Exit 31",
-      "zone": "",
-      "floor": 1,
-      "x": 1470,
-      "y": 550,
-      "facing": "south"
-    },
-    {
-      "id": "dest_1768272635985",
-      "name": "Exit 32",
-      "zone": "",
-      "floor": 1,
-      "x": 940,
-      "y": 580,
-      "facing": "south"
-    },
-    {
       "id": "dest_1768274039948",
       "name": "Exit 33",
       "zone": "",
@@ -601,5 +528,5 @@
     }
   ],
   "gridSize": 10,
-  "savedAt": "2026-01-13T03:14:42.421Z"
+  "savedAt": "2026-01-14T07:17:22.139Z"
 }
