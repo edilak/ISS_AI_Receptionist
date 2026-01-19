@@ -4,7 +4,6 @@ import ChatInterface from './components/ChatInterface';
 import PathMap from './components/PathMap';
 import Header from './components/Header';
 import LanguageSelector from './components/LanguageSelector';
-import CoordinateMapper from './components/CoordinateMapper';
 import SpaceEditor from './components/SpaceEditor';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -16,9 +15,7 @@ function App() {
   const [currentLocation, setCurrentLocation] = useState('Main Entrance');
   const [pathData, setPathData] = useState(null);
   const [showPathMap, setShowPathMap] = useState(false);
-  const [showCoordinateMapper, setShowCoordinateMapper] = useState(false);
   const [showSpaceEditor, setShowSpaceEditor] = useState(false);
-  const [mapperFloor] = useState(1);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update time every minute
@@ -276,28 +273,9 @@ function App() {
           onLanguageChange={setLanguage}
         />
       
-      {/* Coordinate Mapper - Development Tool */}
-      {showCoordinateMapper && (
-        <CoordinateMapper
-          floorPlanImage={null}
-          floorNumber={mapperFloor}
-          onSave={(data) => {
-            console.log('Coordinate mapper saved:', data);
-          }}
-          onClose={() => setShowCoordinateMapper(false)}
-        />
-      )}
-      
       {/* Development: Add buttons to open dev tools */}
       {process.env.NODE_ENV === 'development' && (
         <div className="dev-tools-container">
-        <button
-            className="dev-mapper-btn"
-          onClick={() => setShowCoordinateMapper(true)}
-            title="Coordinate Mapper"
-          >
-            🗺️
-          </button>
           <button
             className="dev-mapper-btn dev-space-btn"
             onClick={() => setShowSpaceEditor(true)}

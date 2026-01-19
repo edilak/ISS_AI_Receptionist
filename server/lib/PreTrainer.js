@@ -5,8 +5,7 @@
  * destination pairs to create a comprehensive navigation policy.
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+const { getRLPolicyMongoOnly, saveRLPolicyMongoOnly } = require('./dataAccess');
 const GridGenerator = require('./GridGenerator');
 const RLEnvironment = require('./RLEnvironment');
 const SpaceRLAgent = require('./SpaceRLAgent');
@@ -40,8 +39,9 @@ class PreTrainer {
     this.environment = null;
     this.agent = null;
     
-    // Paths
-    this.dataDir = path.join(__dirname, '..', 'data', 'rl_policies');
+    // MongoDB policy names
+    this.policyName = options.policyName || 'q_table';
+    this.checkpointName = options.checkpointName || 'checkpoint';
   }
 
   /**
@@ -87,21 +87,7 @@ class PreTrainer {
       batchSize: 32
     });
     
-    // Ensure data directory exists
-    await this.ensureDataDir();
-    
     return gridData;
-  }
-
-  /**
-   * Ensure data directory exists
-   */
-  async ensureDataDir() {
-    try {
-      await fs.mkdir(this.dataDir, { recursive: true });
-    } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-    }
   }
 
   /**
@@ -266,12 +252,14 @@ class PreTrainer {
    * Save checkpoint during training
    */
   async saveCheckpoint() {
-    const checkpointPath = path.join(this.dataDir, 'checkpoint.json');
     const data = this.agent.exportQTable();
     data.checkpoint = true;
     data.progress = this.progress;
-    
-    await fs.writeFile(checkpointPath, JSON.stringify(data, null, 2));
+
+    await saveRLPolicyMongoOnly(this.checkpointName, {
+      type: 'checkpoint',
+      ...data
+    });
     console.log(`Checkpoint saved at ${this.progress}% progress`);
   }
 
@@ -279,11 +267,13 @@ class PreTrainer {
    * Save final Q-table
    */
   async saveQTable() {
-    const qTablePath = path.join(this.dataDir, 'q_table.json');
     const data = this.agent.exportQTable();
     data.trainingResults = this.results;
-    
-    await fs.writeFile(qTablePath, JSON.stringify(data, null, 2));
+
+    await saveRLPolicyMongoOnly(this.policyName, {
+      type: 'q_table',
+      ...data
+    });
     console.log(`Q-table saved with ${this.agent.qTable.size} states`);
   }
 
@@ -293,8 +283,7 @@ class PreTrainer {
    */
   async loadQTable() {
     try {
-      const qTablePath = path.join(this.dataDir, 'q_table.json');
-      const data = JSON.parse(await fs.readFile(qTablePath, 'utf8'));
+      const data = await getRLPolicyMongoOnly(this.policyName);
       this.agent.importQTable(data);
       return true;
     } catch (error) {

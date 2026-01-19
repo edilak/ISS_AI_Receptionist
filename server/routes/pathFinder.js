@@ -2,18 +2,22 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const { getLocationGraph, getFloorPlans } = require('../lib/dataAccess');
 
 // Load HSITP location graph data
 let locationGraph;
 const locationDataPath = path.join(__dirname, '../data/hsitp_locationGraph.json');
 
-// Function to load/reload the graph from file
-function loadLocationGraph() {
+// Function to load/reload the graph from DB (fallback to file)
+async function loadLocationGraph() {
   try {
-    const locationData = JSON.parse(fs.readFileSync(locationDataPath, 'utf8'));
+    const locationData = await getLocationGraph();
+    if (!locationData) {
+      throw new Error('No location graph found in DB or file');
+    }
     locationGraph = {
-      nodes: locationData.nodes,
-      edges: locationData.edges
+      nodes: locationData.nodes || [],
+      edges: locationData.edges || []
     };
     
     // Validate and log
@@ -96,13 +100,15 @@ function validateGraph(graph) {
 }
 
 // Initial load
-loadLocationGraph();
+loadLocationGraph()
+  .catch(err => console.error('❌ Failed initial location graph load:', err.message));
 
-// Load floor plan routes to constrain pathfinding
-function getAvailableRoutes() {
+async function getAvailableRoutes() {
   try {
-    const floorPlanPath = path.join(__dirname, '../data/hsitp_floorPlans.json');
-    const floorPlanData = JSON.parse(fs.readFileSync(floorPlanPath, 'utf8'));
+    const floorPlanData = await getFloorPlans();
+    if (!floorPlanData) {
+      throw new Error('No floor plan data found');
+    }
     const routes = new Set();
     
     // Build set of available routes (bidirectional)
@@ -124,7 +130,7 @@ function getAvailableRoutes() {
 }
 
 // Dijkstra's algorithm for shortest path (constrained to routes only)
-function findShortestPath(graph, startId, endId) {
+async function findShortestPath(graph, startId, endId) {
   if (!startId || !endId) {
     console.error('❌ Invalid input: startId or endId is missing');
     return null;
@@ -152,7 +158,7 @@ function findShortestPath(graph, startId, endId) {
   }
   
   // Get available routes from floor plan (constraint)
-  const availableRoutes = getAvailableRoutes();
+  const availableRoutes = await getAvailableRoutes();
   
   // Create adjacency list with proper bidirectionality
   const adjacency = {};
@@ -595,7 +601,7 @@ function findLocation(locationStr, preferredFloor = null) {
 }
 
 // Find path between two locations
-router.post('/find-path', (req, res) => {
+router.post('/find-path', async (req, res) => {
   try {
     const { from, to } = req.body;
     
@@ -648,7 +654,7 @@ router.post('/find-path', (req, res) => {
       return res.status(400).json({ error: 'Starting location and destination are the same' });
     }
     
-    const result = findShortestPath(locationGraph, fromNode.id, toNode.id);
+    const result = await findShortestPath(locationGraph, fromNode.id, toNode.id);
     
     if (!result) {
       return res.status(404).json({ error: 'No path found between the specified locations' });
@@ -708,276 +714,6 @@ router.get('/floor-plans', (req, res) => {
   } catch (error) {
     console.error('Error loading floor plans:', error);
     res.status(500).json({ error: 'Failed to load floor plan data' });
-  }
-});
-
-// Update floor plan configuration (for coordinate mapper)
-router.post('/floor-plans/update', (req, res) => {
-  try {
-    const { floor, nodes } = req.body;
-    
-    if (floor === undefined || !nodes || !Array.isArray(nodes)) {
-      return res.status(400).json({ error: 'Invalid request data. Expected floor and nodes array.' });
-    }
-
-    const floorPlanPath = path.join(__dirname, '../data/hsitp_floorPlans.json');
-    const floorPlanData = JSON.parse(fs.readFileSync(floorPlanPath, 'utf8'));
-    
-    // Find the floor and update nodes
-    const floorIndex = floorPlanData.floors.findIndex(f => f.floor === floor);
-    if (floorIndex === -1) {
-      return res.status(404).json({ error: `Floor ${floor} not found` });
-    }
-
-    // Update node coordinates
-    const floorInfo = floorPlanData.floors[floorIndex];
-    const pixelsPerMeter = floorInfo.scale?.pixelsPerMeter || 12; // Default conversion factor
-    
-    // First, identify deleted nodes (nodes that exist in floorInfo but not in incoming nodes)
-    const existingNodeIds = new Set(floorInfo.nodes.map(n => n.id));
-    const incomingNodeIds = new Set(nodes.map(n => n.id));
-    const deletedNodeIds = [...existingNodeIds].filter(id => !incomingNodeIds.has(id));
-    
-    // Remove deleted nodes from floor plan
-    if (deletedNodeIds.length > 0) {
-      console.log(`🗑️  Deleting ${deletedNodeIds.length} node(s) from floor ${floor}: ${deletedNodeIds.join(', ')}`);
-      floorInfo.nodes = floorInfo.nodes.filter(n => !deletedNodeIds.includes(n.id));
-      
-      // Remove routes connected to deleted nodes
-      const routesBefore = floorInfo.paths?.length || 0;
-      floorInfo.paths = (floorInfo.paths || []).filter(r => 
-        !deletedNodeIds.includes(r.from) && !deletedNodeIds.includes(r.to)
-      );
-      const routesAfter = floorInfo.paths?.length || 0;
-      if (routesBefore !== routesAfter) {
-        console.log(`🗑️  Deleted ${routesBefore - routesAfter} route(s) connected to deleted nodes`);
-      }
-    }
-    
-    // Also remove deleted nodes and their edges from location graph
-    if (deletedNodeIds.length > 0) {
-      try {
-        const locationGraphPath = path.join(__dirname, '../data/hsitp_locationGraph.json');
-        const locationGraphData = JSON.parse(fs.readFileSync(locationGraphPath, 'utf8'));
-        
-        // Remove nodes
-        const nodesBefore = locationGraphData.nodes.length;
-        locationGraphData.nodes = locationGraphData.nodes.filter(n => !deletedNodeIds.includes(n.id));
-        const nodesAfter = locationGraphData.nodes.length;
-        if (nodesBefore !== nodesAfter) {
-          console.log(`🗑️  Deleted ${nodesBefore - nodesAfter} node(s) from location graph`);
-        }
-        
-        // Remove edges connected to deleted nodes
-        const edgesBefore = locationGraphData.edges.length;
-        locationGraphData.edges = locationGraphData.edges.filter(e => 
-          !deletedNodeIds.includes(e.from) && !deletedNodeIds.includes(e.to)
-        );
-        const edgesAfter = locationGraphData.edges.length;
-        if (edgesBefore !== edgesAfter) {
-          console.log(`🗑️  Deleted ${edgesBefore - edgesAfter} edge(s) connected to deleted nodes from location graph`);
-        }
-        
-        // Write updated location graph back to file
-        fs.writeFileSync(locationGraphPath, JSON.stringify(locationGraphData, null, 2), 'utf8');
-      } catch (error) {
-        console.error(`❌ Error removing deleted nodes from location graph:`, error.message);
-        // Don't fail the entire operation if location graph cleanup fails
-      }
-    }
-    
-    if (nodes && Array.isArray(nodes)) {
-      nodes.forEach(nodeUpdate => {
-        const nodeIndex = floorInfo.nodes.findIndex(n => n.id === nodeUpdate.id);
-        
-        // Convert pixel coordinates to real-world coordinates (meters)
-        const realX = nodeUpdate.realX !== undefined 
-          ? nodeUpdate.realX 
-          : (nodeUpdate.pixelX / pixelsPerMeter);
-        const realY = nodeUpdate.realY !== undefined 
-          ? nodeUpdate.realY 
-          : (nodeUpdate.pixelY / pixelsPerMeter);
-        
-        if (nodeIndex !== -1) {
-          // Update existing node
-          floorInfo.nodes[nodeIndex].pixelX = nodeUpdate.pixelX;
-          floorInfo.nodes[nodeIndex].pixelY = nodeUpdate.pixelY;
-          floorInfo.nodes[nodeIndex].realX = realX;
-          floorInfo.nodes[nodeIndex].realY = realY;
-          if (nodeUpdate.name) {
-            floorInfo.nodes[nodeIndex].name = nodeUpdate.name;
-          }
-          // Update anchors if provided
-          if (nodeUpdate.anchors !== undefined) {
-            floorInfo.nodes[nodeIndex].anchors = nodeUpdate.anchors;
-            console.log(`🎯 Updated ${nodeUpdate.anchors.length} anchor(s) for node: ${nodeUpdate.id}`);
-          }
-        } else {
-          // Add new node
-          const newNode = {
-            id: nodeUpdate.id,
-            pixelX: nodeUpdate.pixelX,
-            pixelY: nodeUpdate.pixelY,
-            realX: realX,
-            realY: realY,
-            marker: nodeUpdate.marker || 'zone',
-            name: nodeUpdate.name || nodeUpdate.id
-          };
-          // Include anchors if provided
-          if (nodeUpdate.anchors && Array.isArray(nodeUpdate.anchors)) {
-            newNode.anchors = nodeUpdate.anchors;
-            console.log(`🎯 Added ${nodeUpdate.anchors.length} anchor(s) for new node: ${nodeUpdate.id}`);
-          }
-          floorInfo.nodes.push(newNode);
-        }
-        
-        // Also update/add to location graph
-        try {
-          const locationGraphPath = path.join(__dirname, '../data/hsitp_locationGraph.json');
-          const locationGraphData = JSON.parse(fs.readFileSync(locationGraphPath, 'utf8'));
-          
-          const locationNodeIndex = locationGraphData.nodes.findIndex(n => n.id === nodeUpdate.id);
-          if (locationNodeIndex !== -1) {
-            // Update existing node in location graph
-            locationGraphData.nodes[locationNodeIndex].x = realX;
-            locationGraphData.nodes[locationNodeIndex].y = realY;
-            if (nodeUpdate.name) {
-              locationGraphData.nodes[locationNodeIndex].name = nodeUpdate.name;
-            }
-            console.log(`✅ Updated location graph node: ${nodeUpdate.id} (x: ${realX}, y: ${realY})`);
-          } else {
-            // Add new node to location graph
-            // Determine node type from marker or default to 'zone'
-            const nodeType = nodeUpdate.marker || 
-                           (nodeUpdate.id.includes('zone') ? 'zone' :
-                            nodeUpdate.id.includes('lift') || nodeUpdate.id.includes('elevator') ? 'elevator' :
-                            nodeUpdate.id.includes('stairs') ? 'stairs' :
-                            nodeUpdate.id.includes('corridor') ? 'corridor' :
-                            nodeUpdate.id.includes('pantry') ? 'facility' :
-                            nodeUpdate.id.includes('lav') || nodeUpdate.id.includes('restroom') ? 'facility' :
-                            nodeUpdate.id.includes('reception') ? 'reception' :
-                            nodeUpdate.id.includes('entrance') ? 'entrance' :
-                            'zone');
-            
-            const newNode = {
-              id: nodeUpdate.id,
-              name: nodeUpdate.name || nodeUpdate.id,
-              floor: floor,
-              x: realX,
-              y: realY,
-              type: nodeType,
-              description: nodeUpdate.description || `${nodeUpdate.name || nodeUpdate.id} on floor ${floor}`
-            };
-            
-            locationGraphData.nodes.push(newNode);
-            console.log(`✅ Added new node to location graph: ${nodeUpdate.id} (x: ${realX}, y: ${realY}, type: ${nodeType})`);
-          }
-          
-          // Write updated location graph back to file
-          fs.writeFileSync(locationGraphPath, JSON.stringify(locationGraphData, null, 2), 'utf8');
-        } catch (error) {
-          console.error(`❌ Error syncing location graph for node ${nodeUpdate.id}:`, error.message);
-          // Don't fail the entire operation if location graph sync fails
-        }
-      });
-    }
-
-    // Update routes/paths if provided
-    if (req.body.paths && Array.isArray(req.body.paths)) {
-      floorInfo.paths = req.body.paths;
-      console.log(`✅ Updated ${req.body.paths.length} routes for floor ${floor}`);
-      
-      // Also sync routes to location graph edges
-      try {
-        const locationGraphPath = path.join(__dirname, '../data/hsitp_locationGraph.json');
-        const locationGraphData = JSON.parse(fs.readFileSync(locationGraphPath, 'utf8'));
-        
-        // Process each route and create/update edges
-        req.body.paths.forEach(route => {
-          const fromNode = locationGraphData.nodes.find(n => n.id === route.from);
-          const toNode = locationGraphData.nodes.find(n => n.id === route.to);
-          
-          if (fromNode && toNode) {
-            // Calculate distance for weight (Euclidean distance)
-            const dx = toNode.x - fromNode.x;
-            const dy = toNode.y - fromNode.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            // Convert meters to seconds (assuming 1.4 m/s walking speed ≈ 0.7 seconds per meter)
-            const weight = Math.max(5, Math.round(distance * 0.7)); // Minimum weight of 5
-            
-            // Check if edge already exists (bidirectional check)
-            const existingEdgeIndex = locationGraphData.edges.findIndex(e => 
-              (e.from === route.from && e.to === route.to) ||
-              (e.from === route.to && e.to === route.from)
-            );
-            
-            if (existingEdgeIndex !== -1) {
-              // Update existing edge weight
-              locationGraphData.edges[existingEdgeIndex].weight = weight;
-              if (route.waypoints && route.waypoints.length > 0) {
-                locationGraphData.edges[existingEdgeIndex].hasWaypoints = true;
-              }
-              console.log(`✅ Updated edge weight: ${route.from} → ${route.to} (weight: ${weight})`);
-            } else {
-              // Add new edge
-              const newEdge = {
-                from: route.from,
-                to: route.to,
-                weight: weight,
-                description: `Path from ${fromNode.name} to ${toNode.name}`
-              };
-              
-              // Check if this is a floor change (different floors)
-              if (fromNode.floor !== toNode.floor) {
-                newEdge.floorChange = true;
-              }
-              
-              // Mark if route has waypoints (for visual representation)
-              if (route.waypoints && route.waypoints.length > 0) {
-                newEdge.hasWaypoints = true;
-              }
-              
-              locationGraphData.edges.push(newEdge);
-              console.log(`✅ Added new edge to location graph: ${route.from} → ${route.to} (weight: ${weight})`);
-            }
-          } else {
-            const missingNodes = [];
-            if (!fromNode) missingNodes.push(route.from);
-            if (!toNode) missingNodes.push(route.to);
-            console.warn(`⚠️ Cannot create edge: nodes not found in location graph: ${missingNodes.join(', ')}`);
-          }
-        });
-        
-        // Write updated location graph back to file
-        fs.writeFileSync(locationGraphPath, JSON.stringify(locationGraphData, null, 2), 'utf8');
-        console.log(`✅ Synced ${req.body.paths.length} routes to location graph edges`);
-      } catch (error) {
-        console.error(`❌ Error syncing routes to location graph:`, error.message);
-        // Don't fail the entire operation if edge sync fails
-      }
-    }
-
-    // Write updated data back to file
-    fs.writeFileSync(floorPlanPath, JSON.stringify(floorPlanData, null, 2), 'utf8');
-    
-    const nodesUpdated = nodes ? nodes.length : 0;
-    const routesUpdated = req.body.paths ? req.body.paths.length : 0;
-    
-    // Reload the location graph to reflect changes
-    const reloadSuccess = loadLocationGraph();
-    
-    console.log(`✅ Updated ${nodesUpdated} nodes and ${routesUpdated} routes for floor ${floor}`);
-    res.json({ 
-      success: true, 
-      message: `Updated ${nodesUpdated} nodes and ${routesUpdated} routes for floor ${floor}`,
-      floor: floor,
-      nodesUpdated: nodesUpdated,
-      routesUpdated: routesUpdated,
-      graphReloaded: reloadSuccess
-    });
-  } catch (error) {
-    console.error('❌ Error updating floor plans:', error);
-    res.status(500).json({ error: 'Failed to update floor plans', details: error.message });
   }
 });
 

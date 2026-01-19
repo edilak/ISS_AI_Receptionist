@@ -2,9 +2,8 @@
 
 ## Overview
 
-This project uses multiple data files and structures to support navigation, pathfinding, and building information. The system supports two navigation approaches:
-1. **Graph-based navigation** (using location graphs)
-2. **Continuous space navigation** (using corridors and destinations with RL)
+This project uses data files and structures to support continuous space navigation, pathfinding, and building information. The system uses:
+- **Continuous space navigation** (using corridors and destinations with RL)
 
 ---
 
@@ -49,58 +48,7 @@ This project uses multiple data files and structures to support navigation, path
 
 ---
 
-### 2. `server/data/hsitp_locationGraph.json`
-**Purpose**: Graph-based representation of locations and connections for pathfinding.
-
-**Structure**:
-```json
-{
-  "description": "string",
-  "building": {
-    "name": "string",
-    "fullName": "string",
-    "address": "string",
-    "type": "string",
-    "floors": number,
-    "totalGFA": number,
-    "specifications": {
-      "gFloorArea": "string",
-      "typicalFloorArea": "string",
-      "labProvisions": "string",
-      "floorLoading": "string",
-      "structuralClearance": "string"
-    }
-  },
-  "nodes": [
-    {
-      "id": "string",           // Unique identifier (e.g., "hsitp_main_entrance")
-      "name": "string",         // Human-readable name
-      "floor": number,          // Floor number
-      "x": number,              // X coordinate (real-world meters or normalized)
-      "y": number,              // Y coordinate (real-world meters or normalized)
-      "type": "string",         // "entrance", "reception", "lobby", "elevator", "stairs", "facility", "zone", "corridor"
-      "description": "string", // Human-readable description
-      "image": "string"         // URL or path to image
-    }
-  ],
-  "edges": [
-    {
-      "from": "string",         // Source node ID
-      "to": "string",           // Target node ID
-      "weight": number,         // Edge weight (distance/cost)
-      "description": "string",  // Human-readable description
-      "floorChange": boolean,   // Optional: true if edge changes floors
-      "hasWaypoints": boolean   // Optional: true if path has intermediate waypoints
-    }
-  ]
-}
-```
-
-**Used by**: `NavigationService`, `PathfindingEngine`, `AdvancedRLAgent`
-
----
-
-### 3. `server/data/hsitp_floorPlans.json`
+### 2. `server/data/hsitp_floorPlans.json`
 **Purpose**: Floor plan images and coordinate mapping for visual path representation.
 
 **Structure**:
@@ -181,16 +129,7 @@ This project uses multiple data files and structures to support navigation, path
 
 ## Additional Data Files
 
-### 4. `server/data/navigation_qtable.json`
-**Purpose**: Saved Q-table for reinforcement learning pathfinding optimization.
-
-**Structure**: Internal format used by `AdvancedRLAgent` and `PathfindingEngine`.
-
-**Used by**: `AdvancedRLAgent`, `PathfindingEngine`
-
----
-
-### 5. `server/data/space_rl_model.json`
+### 3. `server/data/space_rl_model.json`
 **Purpose**: Saved value maps for continuous space RL agent.
 
 **Structure**: Internal format used by `ContinuousSpaceRLAgent`.
@@ -203,47 +142,25 @@ This project uses multiple data files and structures to support navigation, path
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Navigation System                         │
+│              Continuous Space Navigation System              │
 └─────────────────────────────────────────────────────────────┘
                             │
-        ┌───────────────────┴───────────────────┐
-        │                                       │
-┌───────▼────────┐                    ┌────────▼────────┐
-│ Graph-Based    │                    │ Continuous      │
-│ Navigation     │                    │ Space Navigation│
-└───────┬────────┘                    └────────┬────────┘
-        │                                       │
-┌───────▼────────┐                    ┌────────▼────────┐
-│ locationGraph  │                    │ space_definitions│
-│ .json          │                    │ .json            │
-└───────┬────────┘                    └────────┬────────┘
-        │                                       │
-        └───────────────┬───────────────────────┘
-                        │
-                ┌───────▼────────┐
-                │ floorPlans.json │
-                │ (Visualization) │
-                └─────────────────┘
+                     ┌───────▼────────┐
+                     │ space_definitions│
+                     │ .json            │
+                     └───────┬────────┘
+                             │
+                     ┌───────▼────────┐
+                     │ floorPlans.json │
+                     │ (Visualization)  │
+                     └─────────────────┘
 ```
 
 ---
 
 ## Data Flow
 
-### 1. **Graph-Based Navigation Flow**
-```
-User Query → Chat API → NavigationService
-                                    ↓
-                            Load locationGraph.json
-                                    ↓
-                            PathfindingEngine (with RL)
-                                    ↓
-                            Generate path with instructions
-                                    ↓
-                            Visualize on floor plan
-```
-
-### 2. **Continuous Space Navigation Flow**
+### **Continuous Space Navigation Flow**
 ```
 User Query → Chat API → SpaceNavigationEngine
                                     ↓
@@ -273,16 +190,6 @@ User Query → Chat API → SpaceNavigationEngine
 - **Zone**: Optional identifier for grouping (e.g., "zone_6", "ahu_room")
 - **Facing**: Used for orientation when arriving at destination
 
-### For Location Graph Nodes (`hsitp_locationGraph.json`)
-- **ID**: Must be unique across all nodes
-- **Type**: Determines node behavior (e.g., "elevator" nodes can change floors)
-- **Coordinates**: Can be in meters or normalized coordinates
-
-### For Location Graph Edges (`hsitp_locationGraph.json`)
-- **From/To**: Must reference valid node IDs
-- **Weight**: Distance or cost (lower = better path)
-- **floorChange**: Set to `true` for elevators/stairs connecting floors
-
 ### For Floor Plans (`hsitp_floorPlans.json`)
 - **Image URL**: Must be accessible from client (placed in `client/public/images/`)
 - **Scale**: `pixelsPerMeter` is critical for coordinate conversion
@@ -298,12 +205,7 @@ User Query → Chat API → SpaceNavigationEngine
 - Y-axis: Increases downward
 - Units: Pixels relative to floor plan image
 
-### 2. **Real-World Coordinates** (locationGraph.json)
-- Origin: Building-specific reference point
-- Units: Meters (or normalized 0-100 scale)
-- Used for: Distance calculations, pathfinding
-
-### 3. **Grid Coordinates** (Internal)
+### 2. **Grid Coordinates** (Internal)
 - Origin: Top-left corner (0, 0)
 - Units: Grid cells (cell size = `gridSize` from space_definitions.json)
 - Used for: RL agent navigation mesh
@@ -321,12 +223,6 @@ User Query → Chat API → SpaceNavigationEngine
 - ✅ `id`, `name`, `floor`, `x`, `y`
 - ⚠️ `zone`, `facing` (optional but recommended)
 
-**Location Graph Nodes**:
-- ✅ `id`, `name`, `floor`, `x`, `y`, `type`
-
-**Location Graph Edges**:
-- ✅ `from`, `to`, `weight`
-
 **Floor Plans**:
 - ✅ `floor`, `name`, `image.url`, `image.width`, `image.height`
 - ⚠️ `scale.pixelsPerMeter` (required for accurate navigation)
@@ -338,11 +234,8 @@ User Query → Chat API → SpaceNavigationEngine
 ```
 server/data/
 ├── space_definitions.json          # Corridors & destinations
-├── hsitp_locationGraph.json        # Graph-based locations
 ├── hsitp_floorPlans.json           # Floor plan images & mapping
-├── navigation_qtable.json          # RL Q-table (auto-generated)
 ├── space_rl_model.json             # RL value maps (auto-generated)
-├── locationGraph.example.json      # Example template
 └── floorPlan.example.json          # Example template
 ```
 
@@ -384,33 +277,30 @@ server/data/
 
 ---
 
-## Example: Adding a New Location to Graph
+## Example: Adding a New Corridor
 
-1. **Edit `hsitp_locationGraph.json`**:
+1. **Edit `space_definitions.json`**:
 ```json
 {
-  "nodes": [
+  "corridors": [
     {
-      "id": "new_meeting_room",
-      "name": "New Meeting Room",
+      "id": "corridor_new_123",
+      "name": "New Corridor",
       "floor": 1,
-      "x": 125.0,
-      "y": 90.0,
-      "type": "room",
-      "description": "Newly added meeting room"
-    }
-  ],
-  "edges": [
-    {
-      "from": "hsitp_corridor_1",
-      "to": "new_meeting_room",
-      "weight": 15,
-      "description": "Path to new meeting room"
+      "polygon": [
+        [1000, 500],
+        [1200, 500],
+        [1200, 600],
+        [1000, 600],
+        [1000, 500]
+      ],
+      "type": "corridor"
     }
   ]
 }
 ```
 
-2. **Restart server** to reload graph data
-3. **Test navigation** via API: `POST /api/pathfinder/find-path`
+2. **Ensure polygon is closed** (first and last point should be the same)
+3. **Save and reload** via API: `POST /api/space-nav/definitions`
+4. **Retrain RL agent** if needed: `POST /api/space-nav/train`
 

@@ -5,8 +5,14 @@
  * Handles corridor/destination management, pathfinding, and visualization.
  */
 
-const fs = require('fs');
 const path = require('path');
+const {
+  getSpaceDefinitionsMongoOnly,
+  saveSpaceDefinitionsMongoOnly,
+  getFloorPlansMongoOnly,
+  getRLPolicyMongoOnly,
+  saveRLPolicyMongoOnly
+} = require('./dataAccess');
 const ContinuousSpaceRLAgent = require('./ContinuousSpaceRLAgent');
 
 class SpaceNavigationEngine {
@@ -43,23 +49,23 @@ class SpaceNavigationEngine {
    */
   async initialize() {
     try {
-      // Load floor plans for image dimensions
-      const floorPlanPath = path.join(__dirname, '../data/hsitp_floorPlans.json');
-      if (fs.existsSync(floorPlanPath)) {
-        this.floorPlans = JSON.parse(fs.readFileSync(floorPlanPath, 'utf8'));
+      // Load floor plans for image dimensions (MongoDB-only)
+      this.floorPlans = await getFloorPlansMongoOnly();
 
-        // Extract image dimensions per floor
-        for (const floor of this.floorPlans.floors) {
-          this.imageDimensions[floor.floor] = {
-            width: floor.image?.naturalWidth || floor.image?.width || 2400,
-            height: floor.image?.naturalHeight || floor.image?.height || 1800
-          };
-        }
-        console.log('✅ Floor plans loaded');
+      // Extract image dimensions per floor
+      for (const floor of this.floorPlans.floors || []) {
+        this.imageDimensions[floor.floor] = {
+          width: floor.image?.naturalWidth || floor.image?.width || 2400,
+          height: floor.image?.naturalHeight || floor.image?.height || 1800
+        };
       }
+      console.log('✅ Floor plans loaded');
 
       // Load space definitions
       await this.loadDefinitions();
+
+      // Load RL model (MongoDB-only)
+      await this.loadModel();
 
       // OPTIONAL: Automatically trigger VI pre-computation on startup
       // Since it's fast now, we can just do it.
@@ -78,20 +84,18 @@ class SpaceNavigationEngine {
    */
   async loadDefinitions() {
     try {
-      if (fs.existsSync(this.definitionsPath)) {
-        const data = JSON.parse(fs.readFileSync(this.definitionsPath, 'utf8'));
-        this.corridors = data.corridors || [];
-        this.destinations = data.destinations || [];
-        this.gridSize = data.gridSize || 10;
+      const data = await getSpaceDefinitionsMongoOnly();
+      this.corridors = data.corridors || [];
+      this.destinations = data.destinations || [];
+      this.gridSize = data.gridSize || 10;
 
-        // Update agent environment
-        this.updateAgentEnvironment();
+      // Update agent environment
+      this.updateAgentEnvironment();
 
-        console.log(`✅ Space definitions loaded: ${this.corridors.length} corridors, ${this.destinations.length} destinations`);
-        return true;
-      }
+      console.log(`✅ Space definitions loaded: ${this.corridors.length} corridors, ${this.destinations.length} destinations`);
+      return true;
     } catch (error) {
-      console.warn('⚠️ Could not load space definitions:', error.message);
+      console.warn('⚠️ Could not load space definitions from MongoDB:', error.message);
     }
     return false;
   }
@@ -105,18 +109,12 @@ class SpaceNavigationEngine {
       this.destinations = data.destinations || this.destinations;
       this.gridSize = data.gridSize || this.gridSize;
 
-      // Ensure data directory exists
-      const dataDir = path.dirname(this.definitionsPath);
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-
-      fs.writeFileSync(this.definitionsPath, JSON.stringify({
+      await saveSpaceDefinitionsMongoOnly({
         corridors: this.corridors,
         destinations: this.destinations,
         gridSize: this.gridSize,
         savedAt: new Date().toISOString()
-      }, null, 2));
+      });
 
       // Update agent environment (this will also trigger center computation if clearance map is ready)
       this.updateAgentEnvironment();
@@ -192,13 +190,13 @@ class SpaceNavigationEngine {
    */
   async loadModel() {
     try {
-      if (fs.existsSync(this.modelPath)) {
-        const data = JSON.parse(fs.readFileSync(this.modelPath, 'utf8'));
-        this.agent.importModel(data);
-        return true;
-      }
+      const data = await getRLPolicyMongoOnly('space_rl_model');
+      // Stored as RLPolicy doc; import the full object (agent importModel ignores unknown fields)
+      this.agent.importModel(data);
+      return true;
     } catch (error) {
-      console.warn('⚠️ Could not load RL model:', error.message);
+      // Model may not exist yet; keep running without it
+      console.warn('⚠️ Could not load RL model from MongoDB:', error.message);
     }
     return false;
   }
@@ -209,13 +207,10 @@ class SpaceNavigationEngine {
   async saveModel() {
     try {
       const data = this.agent.exportModel();
-
-      const dataDir = path.dirname(this.modelPath);
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
-
-      fs.writeFileSync(this.modelPath, JSON.stringify(data, null, 2));
+      await saveRLPolicyMongoOnly('space_rl_model', {
+        type: 'advanced_model',
+        ...data
+      });
       console.log('✅ RL model saved');
       return true;
     } catch (error) {

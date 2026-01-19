@@ -10,17 +10,11 @@ const InstructionGenerator = require('./InstructionGenerator');
 const PathVisualizer = require('./PathVisualizer');
 const AdvancedPathVisualizer = require('./AdvancedPathVisualizer');
 const { getInstance: getPerformanceMonitor } = require('./PerformanceMonitor');
-const fs = require('fs');
-const path = require('path');
+const { getLocationGraphMongoOnly, getFloorPlansMongoOnly, getRLPolicyMongoOnly, saveRLPolicyMongoOnly } = require('./dataAccess');
 
 class NavigationService {
   constructor(options = {}) {
-    this.options = {
-      graphPath: path.join(__dirname, '../data/hsitp_locationGraph.json'),
-      floorPlanPath: path.join(__dirname, '../data/hsitp_floorPlans.json'),
-      qTablePath: path.join(__dirname, '../data/navigation_qtable.json'),
-      ...options
-    };
+    this.options = { ...options };
 
     this.graph = null;
     this.floorPlanData = null;
@@ -43,11 +37,11 @@ class NavigationService {
       console.log('🚀 Initializing NavigationService...');
 
       // Load graph data
-      this.graph = this.loadGraph();
+      this.graph = await this.loadGraph();
       console.log(`   📊 Loaded graph: ${this.graph.nodes.length} nodes, ${this.graph.edges.length} edges`);
 
       // Load floor plan data
-      this.floorPlanData = this.loadFloorPlanData();
+      this.floorPlanData = await this.loadFloorPlanData();
       console.log(`   🗺️  Loaded floor plans: ${this.floorPlanData?.floors?.length || 0} floors`);
 
       // Initialize pathfinding engine with RL-only pathfinding
@@ -62,7 +56,7 @@ class NavigationService {
       });
 
       // Load saved Q-table if exists
-      this.loadQTable();
+      await this.loadQTable();
 
       // Initialize instruction generator
       this.instructionGenerator = new InstructionGenerator();
@@ -93,50 +87,43 @@ class NavigationService {
   }
 
   /**
-   * Load graph data from file
+   * Load graph data from MongoDB (no file fallback)
    */
-  loadGraph() {
-    const graphData = JSON.parse(fs.readFileSync(this.options.graphPath, 'utf8'));
-    return {
-      nodes: graphData.nodes,
-      edges: graphData.edges
-    };
+  async loadGraph() {
+    const graphData = await getLocationGraphMongoOnly();
+    return { nodes: graphData.nodes, edges: graphData.edges };
   }
 
   /**
-   * Load floor plan data from file
+   * Load floor plan data from MongoDB (no file fallback)
    */
-  loadFloorPlanData() {
+  async loadFloorPlanData() {
+    return await getFloorPlansMongoOnly();
+  }
+
+  /**
+   * Load Q-table from MongoDB (no file fallback)
+   */
+  async loadQTable() {
     try {
-      return JSON.parse(fs.readFileSync(this.options.floorPlanPath, 'utf8'));
+      const policy = await getRLPolicyMongoOnly('navigation_qtable');
+      const qTable = policy.qTable || policy;
+      this.pathfindingEngine.importQTable(qTable);
+      console.log(`   🧠 Loaded Q-table: ${Object.keys(qTable).length} entries`);
     } catch (error) {
-      console.warn('⚠️ Could not load floor plan data:', error.message);
-      return null;
+      console.warn('⚠️ Could not load Q-table from MongoDB:', error.message);
     }
   }
 
   /**
-   * Load Q-table from file
-   */
-  loadQTable() {
-    try {
-      if (fs.existsSync(this.options.qTablePath)) {
-        const data = JSON.parse(fs.readFileSync(this.options.qTablePath, 'utf8'));
-        this.pathfindingEngine.importQTable(data);
-        console.log(`   🧠 Loaded Q-table: ${Object.keys(data).length} entries`);
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not load Q-table:', error.message);
-    }
-  }
-
-  /**
-   * Save Q-table to file
+   * Save Q-table to MongoDB (no file fallback)
    */
   saveQTable() {
     try {
       const data = this.pathfindingEngine.exportQTable();
-      fs.writeFileSync(this.options.qTablePath, JSON.stringify(data, null, 2));
+      // Fire-and-forget: don't block navigation loop
+      saveRLPolicyMongoOnly('navigation_qtable', { type: 'q_table', qTable: data })
+        .catch(err => console.warn('⚠️ Could not save Q-table to MongoDB:', err.message));
       console.log(`💾 Saved Q-table: ${Object.keys(data).length} entries`);
     } catch (error) {
       console.warn('⚠️ Could not save Q-table:', error.message);

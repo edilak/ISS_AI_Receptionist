@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const path = require('path');
 require('dotenv').config();
 
+// Connect to MongoDB
+const { connectDB } = require('./lib/database');
+
 const chatRoutes = require('./routes/chat');
 const pathFinderRoutes = require('./routes/pathFinder');
 const analyticsRoutes = require('./routes/analytics');
@@ -38,8 +41,22 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 ISS AI Receptionist server running on port ${PORT}`);
-  console.log(`📍 API endpoints available at http://localhost:${PORT}/api`);
-});
+// Initialize server
+async function startServer() {
+  try {
+    // Connect to MongoDB
+    await connectDB();
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`🚀 ISS AI Receptionist server running on port ${PORT}`);
+      console.log(`📍 API endpoints available at http://localhost:${PORT}/api`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
+}
+
+startServer();
 
