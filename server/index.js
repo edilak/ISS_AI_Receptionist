@@ -8,6 +8,7 @@ const chatRoutes = require('./routes/chat');
 const pathFinderRoutes = require('./routes/pathFinder');
 const analyticsRoutes = require('./routes/analytics');
 const spaceNavRoutes = require('./routes/spaceNav');
+const speechRoutes = require('./routes/speech');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/pathfinder', pathFinderRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/space-nav', spaceNavRoutes);
+app.use('/api/speech', speechRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

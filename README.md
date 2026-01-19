@@ -7,6 +7,7 @@ An AI-powered virtual receptionist chatbot for ISS Facility Services Limited, si
 ## Features
 
 - 🤖 **AI-Powered Chatbot**: Uses Azure OpenAI (GPT-4) for natural language understanding
+- 🎤 **Voice Input**: Speech-to-text using Azure Speech Service for hands-free interaction
 - 🗺️ **Path Finder**: Intelligent shortest path calculation between locations
 - 🌐 **Multi-Language Support**: English, Cantonese (粵), and Mandarin (普)
 - 🎨 **Modern UI**: Beautiful, responsive interface inspired by MTR's design
@@ -37,6 +38,7 @@ ISS_AI_Receptionist/
 - Node.js (v14 or higher)
 - npm or yarn
 - Azure OpenAI API Key and Endpoint (for GPT-4)
+- Azure Speech Service Key and Region (for voice input)
 
 ## Installation
 
@@ -51,12 +53,17 @@ ISS_AI_Receptionist/
    ```bash
    cp .env.example .env
    ```
-   Then edit `.env` and add your Azure OpenAI credentials:
+   Then edit `.env` and add your Azure credentials:
    ```
+   # Azure OpenAI (for chatbot)
    AZURE_OPENAI_API_KEY=your_azure_openai_api_key
    AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
    AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4
    AZURE_OPENAI_API_VERSION=2024-12-01-preview
+   
+   # Azure Speech Service (for voice input)
+   AZURE_SPEECH_KEY=your_azure_speech_key
+   AZURE_SPEECH_REGION=eastus
    ```
    
    **Getting Azure OpenAI Credentials:**
@@ -65,6 +72,13 @@ ISS_AI_Receptionist/
    3. Go to "Keys and Endpoint" to get your API key and endpoint
    4. Go to "Deployments" to create a GPT-4 deployment (or use existing one)
    5. Use the deployment name in `AZURE_OPENAI_DEPLOYMENT_NAME`
+   
+   **Getting Azure Speech Service Credentials:**
+   1. Go to [Azure Portal](https://portal.azure.com)
+   2. Create a new "Speech" resource (or use existing one)
+   3. Go to "Keys and Endpoint" to get your API key
+   4. Note your resource region (e.g., `eastus`, `westus`, `southeastasia`)
+   5. Add `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` to your `.env` file
 
 ## Running the Application
 
@@ -131,6 +145,20 @@ npm run server
   }
   ```
 - `GET /api/pathfinder/search?q=office` - Search locations
+
+### Speech API
+
+- `GET /api/speech/token` - Get Azure Speech Service access token (for frontend use)
+  - Returns a token valid for 10 minutes
+  - Used by the VoiceInput component for speech recognition
+
+- `POST /api/speech/recognize` - Speech-to-text recognition (alternative REST API method)
+  ```json
+  {
+    "audioData": "base64_encoded_audio",
+    "language": "en"
+  }
+  ```
 
 ## Configuration
 
@@ -210,11 +238,40 @@ To demonstrate without OutSystems:
    - "Show me the way to Office 201"
    - "How to get to Conference Hall from Main Entrance?"
 
+## Voice Input Feature
+
+The chatbot now supports voice input using Azure Speech Service. Users can click the microphone button to speak their questions instead of typing.
+
+### How to Use Voice Input
+
+1. Click the microphone button in the chat input area
+2. Speak your question clearly
+3. The speech will be converted to text and appear in the input field
+4. Click the microphone again to stop listening, or click send to submit
+
+### Supported Languages
+
+- English (en-US)
+- Cantonese (zh-HK)
+- Mandarin (zh-CN)
+
+### Browser Requirements
+
+- Chrome, Edge, or Safari (latest versions)
+- Microphone permissions must be granted
+- HTTPS required for production (microphone access requires secure context)
+
+### Troubleshooting Voice Input
+
+- **Microphone not working**: Check browser permissions and ensure microphone access is granted
+- **No speech detected**: Speak clearly and ensure you're in a quiet environment
+- **Token errors**: Verify `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` are correctly set in `.env`
+
 ## Future Enhancements
 
 - [ ] Google Maps integration for outdoor navigation
 - [ ] Floor plan image overlay for indoor navigation
-- [ ] Voice input/output support
+- [ ] Voice output (text-to-speech) support
 - [ ] Real-time location tracking
 - [ ] Integration with facility management systems
 - [ ] Analytics and usage tracking
@@ -234,6 +291,12 @@ To demonstrate without OutSystems:
 ### CORS Issues
 - The server is configured to allow CORS from localhost
 - For production, update CORS settings in `server/index.js`
+
+### Voice Input Issues
+- Ensure `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` are set in `.env`
+- Check browser console for microphone permission errors
+- For production, ensure your site is served over HTTPS (required for microphone access)
+- Verify your Azure Speech Service resource is active and has available quota
 
 ## License
 

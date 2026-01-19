@@ -52,7 +52,7 @@ class ContinuousSpaceRLAgent {
 
         // Build the combined grid (for backward compatibility)
         this.buildGrid();
-        
+
         // Build separate grids per floor for accurate floor-specific pathfinding
         this.buildFloorGrids();
 
@@ -61,28 +61,28 @@ class ContinuousSpaceRLAgent {
         console.log(`   Grid: ${this.gridWidth}x${this.gridHeight} (Resolution: ${this.options.gridResolution}px)`);
         console.log(`   Corridors: ${this.corridors.length} (F0: ${this.corridors.filter(c => c.floor === 0).length}, F1: ${this.corridors.filter(c => c.floor === 1).length})`);
     }
-    
+
     /**
      * Build separate navigable grids for each floor
      */
     buildFloorGrids() {
         if (!this.imageDimensions) return;
-        
+
         const { width, height } = this.imageDimensions;
         const res = this.options.gridResolution;
         const gridWidth = Math.ceil(width / res);
         const gridHeight = Math.ceil(height / res);
-        
+
         // Get unique floors from corridors
         const floors = [...new Set(this.corridors.map(c => c.floor).filter(f => f !== undefined && f !== null))];
-        
+
         for (const floor of floors) {
             const floorGrid = new Uint8Array(gridWidth * gridHeight);
             let navigableCount = 0;
-            
+
             // Get corridors for this floor
             const floorCorridors = this.corridors.filter(c => c.floor === floor);
-            
+
             // Pre-compute which corridors overlap (for intersection detection)
             const corridorOverlaps = new Map(); // corridorId -> Set of overlapping corridor IDs
             for (const c1 of floorCorridors) {
@@ -99,15 +99,15 @@ class ContinuousSpaceRLAgent {
                     }
                 }
             }
-            
+
             for (let y = 0; y < gridHeight; y++) {
                 for (let x = 0; x < gridWidth; x++) {
                     const cx = (x + 0.5) * res;
                     const cy = (y + 0.5) * res;
-                    
+
                     // Check if CENTER is inside a corridor (primary check)
                     let isNavigable = this.isPointInAnyCorridorRaw(cx, cy, floor);
-                    
+
                     // If center is not in corridor, check corners
                     if (!isNavigable) {
                         const corners = [
@@ -116,7 +116,7 @@ class ContinuousSpaceRLAgent {
                             [x * res, (y + 1) * res],
                             [(x + 1) * res, (y + 1) * res]
                         ];
-                        
+
                         // Find which corridor(s) the corners touch
                         const touchedCorridorIds = new Set();
                         for (const [px, py] of corners) {
@@ -126,7 +126,7 @@ class ContinuousSpaceRLAgent {
                                 }
                             }
                         }
-                        
+
                         if (touchedCorridorIds.size === 1) {
                             // Corners touch only ONE corridor - definitely navigable (not a bridge)
                             isNavigable = true;
@@ -151,7 +151,7 @@ class ContinuousSpaceRLAgent {
                             }
                         }
                     }
-                    
+
                     if (isNavigable) {
                         floorGrid[y * gridWidth + x] = 1;
                         navigableCount++;
@@ -160,10 +160,10 @@ class ContinuousSpaceRLAgent {
                     }
                 }
             }
-            
+
             this.floorGrids.set(floor, floorGrid);
             console.log(`   Floor ${floor} grid: ${navigableCount} navigable cells`);
-            
+
             // Compute clearance map for this floor
             const floorClearanceMap = this.computeClearanceMapForGrid(floorGrid, gridWidth, gridHeight);
             this.floorClearanceMaps.set(floor, floorClearanceMap);
@@ -334,10 +334,10 @@ class ContinuousSpaceRLAgent {
      * @param {number|null} floor - Optional floor filter (0, 1, or null for all floors)
      */
     isPointInAnyCorridorRaw(x, y, floor = null) {
-        const corridorsToCheck = floor !== null 
+        const corridorsToCheck = floor !== null
             ? this.corridors.filter(c => c.floor === floor)
             : this.corridors;
-            
+
         for (const corridor of corridorsToCheck) {
             if (this.isPointInPolygon(x, y, corridor.polygon)) {
                 return true;
@@ -419,7 +419,7 @@ class ContinuousSpaceRLAgent {
         const width = this.gridWidth;
         const height = this.gridHeight;
         const size = width * height;
-        
+
         // Determine floor to use:
         // 1. Explicit 'floor' argument
         // 2. 'destination.floor' property
@@ -427,7 +427,7 @@ class ContinuousSpaceRLAgent {
         const targetFloor = floor !== null ? floor : (destination.floor !== undefined ? destination.floor : null);
 
         // Use floor-specific grid if available
-        const useGrid = grid || ((targetFloor !== null && this.floorGrids.has(targetFloor)) 
+        const useGrid = grid || ((targetFloor !== null && this.floorGrids.has(targetFloor))
             ? this.floorGrids.get(targetFloor)
             : this.navigableGrid);
 
@@ -560,7 +560,7 @@ class ContinuousSpaceRLAgent {
         const targetY = Math.floor(destY / res);
 
         // Use floor-specific grid if available
-        const navigableGrid = (floor !== null && this.floorGrids.has(floor)) 
+        const navigableGrid = (floor !== null && this.floorGrids.has(floor))
             ? this.floorGrids.get(floor)
             : this.navigableGrid;
 
@@ -752,6 +752,30 @@ class ContinuousSpaceRLAgent {
             attempts++;
         }
         return list;
+    }
+    /**
+     * Get clearance value at a specific continuous coordinate
+     * Returns distance to nearest obstacle (approximate in pixels)
+     */
+    getClearance(x, y, floor = null) {
+        if (!this.imageDimensions) return 0;
+
+        const res = this.options.gridResolution;
+        const gx = Math.floor(x / res);
+        const gy = Math.floor(y / res);
+
+        if (gx < 0 || gx >= this.gridWidth || gy < 0 || gy >= this.gridHeight) return 0;
+
+        // Get appropriate map
+        const clearanceMap = (floor !== null && this.floorClearanceMaps.has(floor))
+            ? this.floorClearanceMaps.get(floor)
+            : this.clearanceMap;
+
+        if (!clearanceMap) return 0;
+
+        // Linear interpolation could be better, but grid value is sufficient for gradient ascent
+        // Convert grid units back to pixels roughly (clearanceMap stores grid units)
+        return clearanceMap[gy * this.gridWidth + gx] * res;
     }
 }
 
