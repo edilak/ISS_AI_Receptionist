@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: iss-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: iss_ai_receptionist
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - iss-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ISS AI Receptionist Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iss-ai-receptionist
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/iss_ai_receptionist
+      # Environment variables from .env file will be loaded automatically
+      # Required: AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT
+      # Optional: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - iss-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  iss-network:
+    driver: bridge
+

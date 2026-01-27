@@ -1,0 +1,27 @@
+# Development Dockerfile with hot reload
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache dumb-init
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY client/package.json client/package-lock.json ./client/
+
+# Install all dependencies (including dev)
+RUN npm install && cd client && npm install && cd ..
+
+# Copy application files
+COPY . .
+
+# Expose ports (server + React dev server)
+EXPOSE 5000 3000
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start development server
+CMD ["npm", "run", "dev"]
+

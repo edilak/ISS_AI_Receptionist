@@ -8,12 +8,17 @@
     "server": "nodemon server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
+    "start": "node server/index.js",
     "install-all": "npm install && cd client && npm install",
     "migrate:mongodb": "node scripts/migrateToMongoDB.js",
     "test": "node scripts/runTests.js",
     "test:performance": "node scripts/runTests.js --performance",
     "test:rl": "node scripts/runTests.js --rl",
-    "test:system": "node scripts/testSystem.js"
+    "test:system": "node scripts/testSystem.js",
+    "docker:build": "docker build -t iss-ai-receptionist .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "keywords": [
     "ai",

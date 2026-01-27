@@ -47,10 +47,10 @@ async function startServer() {
     // Connect to MongoDB
     await connectDB();
     
-    // Start server
-    app.listen(PORT, () => {
+    // Start server (listen on 0.0.0.0 for Docker compatibility)
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 ISS AI Receptionist server running on port ${PORT}`);
-      console.log(`📍 API endpoints available at http://localhost:${PORT}/api`);
+      console.log(`📍 API endpoints available at http://0.0.0.0:${PORT}/api`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
