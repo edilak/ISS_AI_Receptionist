@@ -6,7 +6,7 @@ import Header from './components/Header';
 import LanguageSelector from './components/LanguageSelector';
 import SpaceEditor from './components/SpaceEditor';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -30,11 +30,11 @@ function App() {
   useEffect(() => {
     const greeting = {
       id: Date.now(),
-      text: language === 'en' 
-        ? 'Hello! Welcome to HSITP Building 8. How may I assist you today?' 
-        : language === 'zh-HK' 
-        ? '你好！歡迎來到香港科技園8號大樓。請問有咩可以幫到你？'
-        : '你好！欢迎来到香港科技园8号大楼。请问有什么可以帮您？',
+      text: language === 'en'
+        ? 'Hello! Welcome to HSITP Building 8. How may I assist you today?'
+        : language === 'zh-HK'
+          ? '你好！歡迎來到香港科技園8號大樓。請問有咩可以幫到你？'
+          : '你好！欢迎来到香港科技园8号大楼。请问有什么可以帮您？',
       sender: 'assistant',
       timestamp: new Date()
     };
@@ -53,7 +53,7 @@ function App() {
 
     setMessages(prev => [...prev, newMessage]);
     setIsLoading(true);
-    
+
     // Clear previous path visualization
     setPathData(null);
     setShowPathMap(false);
@@ -103,11 +103,11 @@ function App() {
       console.error('Error sending message:', error);
       const errorMessage = {
         id: Date.now() + 1,
-        text: language === 'en' 
+        text: language === 'en'
           ? 'Sorry, I encountered an error. Please try again.'
           : language === 'zh-HK'
-          ? '抱歉，我遇到錯誤。請再試一次。'
-          : '抱歉，我遇到错误。请再试一次。',
+            ? '抱歉，我遇到錯誤。請再試一次。'
+            : '抱歉，我遇到错误。请再试一次。',
         sender: 'assistant',
         timestamp: new Date(),
         isError: true
@@ -140,14 +140,14 @@ function App() {
   return (
     <div className="kiosk-app">
       {/* Header Bar */}
-      <Header 
+      <Header
         currentLocation={currentLocation}
         onLocationChange={setCurrentLocation}
         language={language}
         currentTime={formatTime()}
         currentDate={formatDate()}
       />
-      
+
       {/* Main Content */}
       <main className="kiosk-main">
         {/* Left Side - AI Assistant */}
@@ -158,8 +158,8 @@ function App() {
               <div className="avatar-ring">
                 <div className="avatar-ring-inner"></div>
               </div>
-            <div className="avatar-face">
-              <div className="avatar-eyes">
+              <div className="avatar-face">
+                <div className="avatar-eyes">
                   <div className="eye left">
                     <div className="eye-pupil"></div>
                   </div>
@@ -176,7 +176,7 @@ function App() {
                 </div>
               </div>
             </div>
-            
+
             {/* Assistant Info */}
             <div className="assistant-info">
               <h2 className="assistant-name">Tracy</h2>
@@ -208,7 +208,7 @@ function App() {
               {language === 'en' ? 'How can I help?' : language === 'zh-HK' ? '我可以如何幫助你？' : '我可以如何帮助你？'}
             </h3>
             <div className="action-buttons">
-              <button 
+              <button
                 className="action-btn"
                 onClick={() => sendMessage(language === 'en' ? 'I need directions' : language === 'zh-HK' ? '我需要指路' : '我需要指路')}
               >
@@ -217,7 +217,7 @@ function App() {
                   {language === 'en' ? 'Wayfinding' : language === 'zh-HK' ? '指路導航' : '指路导航'}
                 </span>
               </button>
-              <button 
+              <button
                 className="action-btn"
                 onClick={() => sendMessage(language === 'en' ? 'Building information' : language === 'zh-HK' ? '大樓資訊' : '大楼资讯')}
               >
@@ -226,7 +226,7 @@ function App() {
                   {language === 'en' ? 'Building Info' : language === 'zh-HK' ? '大樓資訊' : '大楼资讯'}
                 </span>
               </button>
-              <button 
+              <button
                 className="action-btn"
                 onClick={() => sendMessage(language === 'en' ? 'Where are the facilities?' : language === 'zh-HK' ? '設施在哪裏？' : '设施在哪里？')}
               >
@@ -235,7 +235,7 @@ function App() {
                   {language === 'en' ? 'Facilities' : language === 'zh-HK' ? '設施' : '设施'}
                 </span>
               </button>
-              <button 
+              <button
                 className="action-btn"
                 onClick={() => sendMessage(language === 'en' ? 'Emergency assistance' : language === 'zh-HK' ? '緊急協助' : '紧急协助')}
               >
@@ -245,7 +245,7 @@ function App() {
                 </span>
               </button>
             </div>
-        </div>
+          </div>
         </section>
 
         {/* Right Side - Chat Interface */}
@@ -268,11 +268,11 @@ function App() {
       </main>
 
       {/* Language Selector - Fixed Position */}
-        <LanguageSelector
-          language={language}
-          onLanguageChange={setLanguage}
-        />
-      
+      <LanguageSelector
+        language={language}
+        onLanguageChange={setLanguage}
+      />
+
       {/* Development: Add buttons to open dev tools */}
       {process.env.NODE_ENV === 'development' && (
         <div className="dev-tools-container">
@@ -285,7 +285,7 @@ function App() {
           </button>
         </div>
       )}
-      
+
       {/* Space Editor - RL Navigation Setup */}
       {showSpaceEditor && (
         <SpaceEditor

@@ -3,7 +3,7 @@ import './PathMap.css';
 import axios from 'axios';
 import FloorMapViewer from './FloorMapViewer';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const PathMap = ({ pathData, onClose, language }) => {
   const [floorPlanData, setFloorPlanData] = useState(null);

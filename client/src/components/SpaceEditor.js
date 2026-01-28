@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './SpaceEditor.css';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
 // **NEW: Point-in-polygon test**
 const isPointInPolygon = (x, y, polygon) => {
   let inside = false;
@@ -96,7 +98,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
   useEffect(() => {
     const loadFloorPlanData = async () => {
       try {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
         const response = await fetch(`${API_BASE_URL}/pathfinder/floor-plans`);
         const data = await response.json();
         setFloorPlanData(data);
@@ -123,7 +124,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
   // Load space definitions
   const loadSpaceDefinitions = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
       const response = await fetch(`${API_BASE_URL}/space-nav/definitions`);
       if (response.ok) {
         const data = await response.json();
@@ -615,7 +615,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
     }
 
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
       const response = await fetch(`${API_BASE_URL}/space-nav/definitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -647,7 +646,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
     setTrainingProgress(0);
 
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
       // Save first
       await handleSave();
@@ -1287,8 +1285,6 @@ const SpaceEditor = ({ onClose, onSave }) => {
                 }}
                 onClick={handleImageClick}
                 onDoubleClick={handleDoubleClick}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
               >
                 {renderGridDefs()}
                 {renderGrid()}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import './VoiceInput.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const VoiceInput = ({ onTranscript, language, disabled }) => {
   const [isListening, setIsListening] = useState(false);
@@ -48,7 +48,7 @@ const VoiceInput = ({ onTranscript, language, disabled }) => {
       // Create speech config with token
       const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
       speechConfig.speechRecognitionLanguage = locale;
-      
+
       // Create audio config (use default microphone)
       const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
 
@@ -108,7 +108,7 @@ const VoiceInput = ({ onTranscript, language, disabled }) => {
       setIsProcessing(false);
 
       const { recognizer, audioConfig, speechConfig } = await initializeRecognizer();
-      
+
       recognizerRef.current = recognizer;
       audioConfigRef.current = audioConfig;
       speechConfigRef.current = speechConfig;
@@ -193,17 +193,17 @@ const VoiceInput = ({ onTranscript, language, disabled }) => {
             ? language === 'en'
               ? 'Click to stop listening'
               : language === 'zh-HK'
-              ? '點擊停止聆聽'
-              : '点击停止聆听'
+                ? '點擊停止聆聽'
+                : '点击停止聆听'
             : language === 'en'
-            ? 'Click to start voice input'
-            : language === 'zh-HK'
-            ? '點擊開始語音輸入'
-            : '点击开始语音输入'
+              ? 'Click to start voice input'
+              : language === 'zh-HK'
+                ? '點擊開始語音輸入'
+                : '点击开始语音输入'
         }
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+          <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
         </svg>
         {isProcessing && (
           <div className="voice-processing-indicator">
