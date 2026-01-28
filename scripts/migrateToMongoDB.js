@@ -81,7 +81,7 @@ async function migrateRLPolicies() {
     optional.navigation_qtable = JSON.parse(fs.readFileSync(navQPath, 'utf8'));
   }
 
-  const policy = await RLPolicy.savePolicy('default', {
+  const policy = await RLPolicy.savePolicy('space_rl_model', {
     type: 'q_table',
     qTable: normalizeQTable(qTable),
     stats: {
@@ -121,7 +121,7 @@ main().catch(async (err) => {
   console.error('❌ Migration failed:', err);
   try {
     await disconnectDB();
-  } catch (_) {}
+  } catch (_) { }
   process.exit(1);
 });
 
